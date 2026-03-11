@@ -84,6 +84,7 @@ impl AbstractChildLimitProvider {
     Self {}
   }
 
+  #[allow(clippy::too_many_arguments)]
   fn next(
     &self,
     birth_time: SolarTime,
