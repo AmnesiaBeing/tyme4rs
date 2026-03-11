@@ -1,4 +1,7 @@
-use std::fmt::{Display, Formatter};
+use alloc::string::{String, ToString};
+
+use core::fmt::{Display, Formatter};
+
 use crate::tyme::{AbstractCulture, AbstractCultureDay, AbstractTyme, Culture, LoopTyme, Tyme};
 
 pub static DOG_NAMES: [&str; 3] = ["初伏", "中伏", "末伏"];
@@ -24,13 +27,19 @@ impl Culture for Dog {
 impl Dog {
   pub fn from_index(index: isize) -> Self {
     Self {
-      parent: LoopTyme::from_index(DOG_NAMES.to_vec().iter().map(|x| x.to_string()).collect(), index)
+      parent: LoopTyme::from_index(
+        DOG_NAMES.to_vec().iter().map(|x| x.to_string()).collect(),
+        index,
+      ),
     }
   }
 
   pub fn from_name(name: &str) -> Self {
     Self {
-      parent: LoopTyme::from_name(DOG_NAMES.to_vec().iter().map(|x| x.to_string()).collect(), name)
+      parent: LoopTyme::from_name(
+        DOG_NAMES.to_vec().iter().map(|x| x.to_string()).collect(),
+        name,
+      ),
     }
   }
 
@@ -44,7 +53,7 @@ impl Dog {
 }
 
 impl Display for Dog {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+  fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
     write!(f, "{}", self.get_name())
   }
 }
@@ -57,9 +66,9 @@ impl PartialEq for Dog {
 
 impl Eq for Dog {}
 
-impl Into<LoopTyme> for Dog {
-  fn into(self) -> LoopTyme {
-    self.parent
+impl From<Dog> for LoopTyme {
+  fn from(val: Dog) -> Self {
+    val.parent
   }
 }
 
@@ -67,7 +76,7 @@ impl Into<LoopTyme> for Dog {
 #[derive(Debug, Clone)]
 pub struct DogDay {
   parent: AbstractCultureDay,
-  dog: Dog
+  dog: Dog,
 }
 
 impl Culture for DogDay {
@@ -83,7 +92,7 @@ impl DogDay {
     let culture: AbstractCulture = abstract_tyme.into();
     Self {
       parent: AbstractCultureDay::new(culture, day_index),
-      dog
+      dog,
     }
   }
 
@@ -97,8 +106,13 @@ impl DogDay {
 }
 
 impl Display for DogDay {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{}第{}天", self.get_name(), self.parent.get_day_index() + 1)
+  fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+    write!(
+      f,
+      "{}第{}天",
+      self.get_name(),
+      self.parent.get_day_index() + 1
+    )
   }
 }
 
@@ -110,14 +124,16 @@ impl PartialEq for DogDay {
 
 impl Eq for DogDay {}
 
-impl Into<AbstractCultureDay> for DogDay {
-  fn into(self) -> AbstractCultureDay {
-    self.parent
+impl From<DogDay> for AbstractCultureDay {
+  fn from(val: DogDay) -> Self {
+    val.parent
   }
 }
 
 #[cfg(test)]
 mod tests {
+  use alloc::string::ToString;
+
   use crate::tyme::culture::dog::{Dog, DogDay};
 
   #[test]
@@ -127,7 +143,9 @@ mod tests {
 
   #[test]
   fn test2() {
-    assert_eq!("初伏", DogDay::new(Dog::from_index(0), 2).get_dog().to_string());
+    assert_eq!(
+      "初伏",
+      DogDay::new(Dog::from_index(0), 2).get_dog().to_string()
+    );
   }
-
 }

@@ -1,7 +1,11 @@
-use std::fmt::{Display, Formatter};
-use crate::tyme::{Culture, Tyme};
+use alloc::format;
+use alloc::string::String;
+use libm::round;
+
 use crate::tyme::culture::Week;
 use crate::tyme::solar::{SolarDay, SolarTime};
+use crate::tyme::{Culture, Tyme};
+use core::fmt::{Display, Formatter};
 
 /// 2000年儒略日数(2000-1-1 12:00:00 UTC)
 pub static J2000: f64 = 2451545.0;
@@ -27,13 +31,19 @@ impl Culture for JulianDay {
 
 impl JulianDay {
   pub fn from_julian_day(day: f64) -> Self {
-    Self {
-      day
-    }
+    Self { day }
   }
 
-  pub fn from_ymd_hms(year: isize, month: usize, day: usize, hour: usize, minute: usize, second: usize) -> Self {
-    let d: f64 = (day as f64) + ((second as f64 * 1.0 / 60.0 + (minute as f64)) / 60.0 + (hour as f64)) / 24.0;
+  pub fn from_ymd_hms(
+    year: isize,
+    month: usize,
+    day: usize,
+    hour: usize,
+    minute: usize,
+    second: usize,
+  ) -> Self {
+    let d: f64 =
+      (day as f64) + ((second as f64 * 1.0 / 60.0 + (minute as f64)) / 60.0 + (hour as f64)) / 24.0;
     let mut n: isize = 0;
     let g: bool = year * 372 + (month as isize) * 31 + (d as isize) >= 588829;
     let mut m: usize = month;
@@ -46,7 +56,13 @@ impl JulianDay {
       n = ((y as f64) * 0.01) as isize;
       n = 2 - n + (((n as f64) * 0.25) as isize);
     }
-    Self::from_julian_day((((365.25 * ((y + 4716) as f64)) as isize) as f64) + (((30.6001 * (m + 1) as f64) as isize) as f64) + d + (n as f64) - 1524.5)
+    Self::from_julian_day(
+      (((365.25 * ((y + 4716) as f64)) as isize) as f64)
+        + (((30.6001 * (m + 1) as f64) as isize) as f64)
+        + d
+        + (n as f64)
+        - 1524.5,
+    )
   }
 
   pub fn get_day(&self) -> f64 {
@@ -91,11 +107,26 @@ impl JulianDay {
 
     f -= minute as f64;
     f *= 60.0;
-    let second: isize = f.round() as isize;
+    let second: isize = round(f) as isize;
     if second < 60 {
-      return SolarTime::from_ymd_hms(year, month as usize, day as usize, hour as usize, minute as usize, second as usize)
+      return SolarTime::from_ymd_hms(
+        year,
+        month as usize,
+        day as usize,
+        hour as usize,
+        minute as usize,
+        second as usize,
+      );
     }
-    SolarTime::from_ymd_hms(year, month as usize, day as usize, hour as usize, minute as usize, second as usize - 60).next(60)
+    SolarTime::from_ymd_hms(
+      year,
+      month as usize,
+      day as usize,
+      hour as usize,
+      minute as usize,
+      second as usize - 60,
+    )
+    .next(60)
   }
 
   /// 儒略日相减
@@ -113,7 +144,7 @@ impl JulianDay {
 }
 
 impl Display for JulianDay {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+  fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
     write!(f, "{}", self.get_name())
   }
 }
@@ -128,10 +159,18 @@ impl Eq for JulianDay {}
 
 #[cfg(test)]
 mod tests {
-  use crate::tyme::solar::{SolarDay};
+  use alloc::string::ToString;
+
+  use crate::tyme::solar::SolarDay;
 
   #[test]
   fn test1() {
-    assert_eq!("2023年1月1日", SolarDay::from_ymd(2023, 1, 1).get_julian_day().get_solar_day().to_string());
+    assert_eq!(
+      "2023年1月1日",
+      SolarDay::from_ymd(2023, 1, 1)
+        .get_julian_day()
+        .get_solar_day()
+        .to_string()
+    );
   }
 }

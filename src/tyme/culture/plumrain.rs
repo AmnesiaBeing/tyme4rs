@@ -1,4 +1,6 @@
-use std::fmt::{Display, Formatter};
+use core::fmt::{Display, Formatter};
+
+use alloc::string::{String, ToString};
 
 use crate::tyme::{AbstractCulture, AbstractCultureDay, AbstractTyme, Culture, LoopTyme, Tyme};
 
@@ -25,13 +27,27 @@ impl Culture for PlumRain {
 impl PlumRain {
   pub fn from_index(index: isize) -> Self {
     Self {
-      parent: LoopTyme::from_index(PLUM_RAIN_NAMES.to_vec().iter().map(|x| x.to_string()).collect(), index)
+      parent: LoopTyme::from_index(
+        PLUM_RAIN_NAMES
+          .to_vec()
+          .iter()
+          .map(|x| x.to_string())
+          .collect(),
+        index,
+      ),
     }
   }
 
   pub fn from_name(name: &str) -> Self {
     Self {
-      parent: LoopTyme::from_name(PLUM_RAIN_NAMES.to_vec().iter().map(|x| x.to_string()).collect(), name)
+      parent: LoopTyme::from_name(
+        PLUM_RAIN_NAMES
+          .to_vec()
+          .iter()
+          .map(|x| x.to_string())
+          .collect(),
+        name,
+      ),
     }
   }
 
@@ -45,7 +61,7 @@ impl PlumRain {
 }
 
 impl Display for PlumRain {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+  fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
     write!(f, "{}", self.get_name())
   }
 }
@@ -58,9 +74,9 @@ impl PartialEq for PlumRain {
 
 impl Eq for PlumRain {}
 
-impl Into<LoopTyme> for PlumRain {
-  fn into(self) -> LoopTyme {
-    self.parent
+impl From<PlumRain> for LoopTyme {
+  fn from(val: PlumRain) -> Self {
+    val.parent
   }
 }
 
@@ -98,9 +114,14 @@ impl PlumRainDay {
 }
 
 impl Display for PlumRainDay {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+  fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
     if self.plum_rain.get_index() == 0 {
-      write!(f, "{}第{}天", self.get_name(), self.parent.get_day_index() + 1)
+      write!(
+        f,
+        "{}第{}天",
+        self.get_name(),
+        self.parent.get_day_index() + 1
+      )
     } else {
       write!(f, "{}", self.plum_rain.get_name())
     }
@@ -115,21 +136,28 @@ impl PartialEq for PlumRainDay {
 
 impl Eq for PlumRainDay {}
 
-impl Into<AbstractCultureDay> for PlumRainDay {
-  fn into(self) -> AbstractCultureDay {
-    self.parent
+impl From<PlumRainDay> for AbstractCultureDay {
+  fn from(val: PlumRainDay) -> Self {
+    val.parent
   }
 }
 
 #[cfg(test)]
 mod tests {
-  use crate::tyme::Culture;
+  use alloc::string::ToString;
+
   use crate::tyme::culture::plumrain::PlumRainDay;
   use crate::tyme::solar::SolarDay;
+  use crate::tyme::Culture;
 
   #[test]
   fn test1() {
-    assert_eq!(true, SolarDay::from_ymd(2024, 6, 10).get_plum_rain_day().is_none());
+    assert_eq!(
+      true,
+      SolarDay::from_ymd(2024, 6, 10)
+        .get_plum_rain_day()
+        .is_none()
+    );
   }
 
   #[test]

@@ -1,7 +1,9 @@
-use std::fmt::{Display, Formatter};
+use core::fmt::{Display, Formatter};
 
-use crate::tyme::{Culture, LoopTyme, Tyme};
+use alloc::string::{String, ToString};
+
 use crate::tyme::culture::Luck;
+use crate::tyme::{Culture, LoopTyme, Tyme};
 
 pub static ECLIPTIC_NAMES: [&str; 2] = ["黄道", "黑道"];
 
@@ -26,13 +28,27 @@ impl Culture for Ecliptic {
 impl Ecliptic {
   pub fn from_index(index: isize) -> Self {
     Self {
-      parent: LoopTyme::from_index(ECLIPTIC_NAMES.to_vec().iter().map(|x| x.to_string()).collect(), index)
+      parent: LoopTyme::from_index(
+        ECLIPTIC_NAMES
+          .to_vec()
+          .iter()
+          .map(|x| x.to_string())
+          .collect(),
+        index,
+      ),
     }
   }
 
   pub fn from_name(name: &str) -> Self {
     Self {
-      parent: LoopTyme::from_name(ECLIPTIC_NAMES.to_vec().iter().map(|x| x.to_string()).collect(), name)
+      parent: LoopTyme::from_name(
+        ECLIPTIC_NAMES
+          .to_vec()
+          .iter()
+          .map(|x| x.to_string())
+          .collect(),
+        name,
+      ),
     }
   }
 
@@ -50,7 +66,7 @@ impl Ecliptic {
 }
 
 impl Display for Ecliptic {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+  fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
     write!(f, "{}", self.get_name())
   }
 }
@@ -63,13 +79,15 @@ impl PartialEq for Ecliptic {
 
 impl Eq for Ecliptic {}
 
-impl Into<LoopTyme> for Ecliptic {
-  fn into(self) -> LoopTyme {
-    self.parent
+impl From<Ecliptic> for LoopTyme {
+  fn from(val: Ecliptic) -> Self {
+    val.parent
   }
 }
 
-pub static TWELVE_STAR_NAMES: [&str; 12] = ["青龙", "明堂", "天刑", "朱雀", "金匮", "天德", "白虎", "玉堂", "天牢", "玄武", "司命", "勾陈"];
+pub static TWELVE_STAR_NAMES: [&str; 12] = [
+  "青龙", "明堂", "天刑", "朱雀", "金匮", "天德", "白虎", "玉堂", "天牢", "玄武", "司命", "勾陈",
+];
 
 /// 黄道黑道十二神
 #[derive(Debug, Clone)]
@@ -92,13 +110,27 @@ impl Culture for TwelveStar {
 impl TwelveStar {
   pub fn from_index(index: isize) -> Self {
     Self {
-      parent: LoopTyme::from_index(TWELVE_STAR_NAMES.to_vec().iter().map(|x| x.to_string()).collect(), index)
+      parent: LoopTyme::from_index(
+        TWELVE_STAR_NAMES
+          .to_vec()
+          .iter()
+          .map(|x| x.to_string())
+          .collect(),
+        index,
+      ),
     }
   }
 
   pub fn from_name(name: &str) -> Self {
     Self {
-      parent: LoopTyme::from_name(TWELVE_STAR_NAMES.to_vec().iter().map(|x| x.to_string()).collect(), name)
+      parent: LoopTyme::from_name(
+        TWELVE_STAR_NAMES
+          .to_vec()
+          .iter()
+          .map(|x| x.to_string())
+          .collect(),
+        name,
+      ),
     }
   }
 
@@ -116,7 +148,7 @@ impl TwelveStar {
 }
 
 impl Display for TwelveStar {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+  fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
     write!(f, "{}", self.get_name())
   }
 }
@@ -129,21 +161,23 @@ impl PartialEq for TwelveStar {
 
 impl Eq for TwelveStar {}
 
-impl Into<LoopTyme> for TwelveStar {
-  fn into(self) -> LoopTyme {
-    self.parent
+impl From<TwelveStar> for LoopTyme {
+  fn from(val: TwelveStar) -> Self {
+    val.parent
   }
 }
 
 #[cfg(test)]
 mod tests {
-  use crate::tyme::Culture;
   use crate::tyme::culture::star::twelve::TwelveStar;
   use crate::tyme::solar::SolarDay;
+  use crate::tyme::Culture;
 
   #[test]
   fn test1() {
-    let star: TwelveStar = SolarDay::from_ymd(2023, 10, 30).get_lunar_day().get_twelve_star();
+    let star: TwelveStar = SolarDay::from_ymd(2023, 10, 30)
+      .get_lunar_day()
+      .get_twelve_star();
     assert_eq!("天德", star.get_name());
     assert_eq!("黄道", star.get_ecliptic().get_name());
     assert_eq!("吉", star.get_ecliptic().get_luck().get_name());
@@ -151,7 +185,9 @@ mod tests {
 
   #[test]
   fn test2() {
-    let star: TwelveStar = SolarDay::from_ymd(2023, 10, 19).get_lunar_day().get_twelve_star();
+    let star: TwelveStar = SolarDay::from_ymd(2023, 10, 19)
+      .get_lunar_day()
+      .get_twelve_star();
     assert_eq!("白虎", star.get_name());
     assert_eq!("黑道", star.get_ecliptic().get_name());
     assert_eq!("凶", star.get_ecliptic().get_luck().get_name());
@@ -159,7 +195,9 @@ mod tests {
 
   #[test]
   fn test3() {
-    let star: TwelveStar = SolarDay::from_ymd(2023, 10, 7).get_lunar_day().get_twelve_star();
+    let star: TwelveStar = SolarDay::from_ymd(2023, 10, 7)
+      .get_lunar_day()
+      .get_twelve_star();
     assert_eq!("天牢", star.get_name());
     assert_eq!("黑道", star.get_ecliptic().get_name());
     assert_eq!("凶", star.get_ecliptic().get_luck().get_name());
@@ -167,7 +205,9 @@ mod tests {
 
   #[test]
   fn test4() {
-    let star: TwelveStar = SolarDay::from_ymd(2023, 10, 8).get_lunar_day().get_twelve_star();
+    let star: TwelveStar = SolarDay::from_ymd(2023, 10, 8)
+      .get_lunar_day()
+      .get_twelve_star();
     assert_eq!("玉堂", star.get_name());
     assert_eq!("黄道", star.get_ecliptic().get_name());
     assert_eq!("吉", star.get_ecliptic().get_luck().get_name());

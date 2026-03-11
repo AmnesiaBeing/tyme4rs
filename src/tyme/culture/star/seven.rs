@@ -1,4 +1,6 @@
-use std::fmt::{Display, Formatter};
+use core::fmt::{Display, Formatter};
+
+use alloc::string::{String, ToString};
 
 use crate::tyme::{Culture, LoopTyme, Tyme};
 
@@ -25,13 +27,27 @@ impl Culture for SevenStar {
 impl SevenStar {
   pub fn from_index(index: isize) -> Self {
     Self {
-      parent: LoopTyme::from_index(SEVEN_STAR_NAMES.to_vec().iter().map(|x| x.to_string()).collect(), index)
+      parent: LoopTyme::from_index(
+        SEVEN_STAR_NAMES
+          .to_vec()
+          .iter()
+          .map(|x| x.to_string())
+          .collect(),
+        index,
+      ),
     }
   }
 
   pub fn from_name(name: &str) -> Self {
     Self {
-      parent: LoopTyme::from_name(SEVEN_STAR_NAMES.to_vec().iter().map(|x| x.to_string()).collect(), name)
+      parent: LoopTyme::from_name(
+        SEVEN_STAR_NAMES
+          .to_vec()
+          .iter()
+          .map(|x| x.to_string())
+          .collect(),
+        name,
+      ),
     }
   }
 
@@ -45,7 +61,7 @@ impl SevenStar {
 }
 
 impl Display for SevenStar {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+  fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
     write!(f, "{}", self.get_name())
   }
 }
@@ -58,8 +74,8 @@ impl PartialEq for SevenStar {
 
 impl Eq for SevenStar {}
 
-impl Into<LoopTyme> for SevenStar {
-  fn into(self) -> LoopTyme {
-    self.parent
+impl From<SevenStar> for LoopTyme {
+  fn from(val: SevenStar) -> Self {
+    val.parent
   }
 }

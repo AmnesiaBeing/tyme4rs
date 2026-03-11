@@ -1,8 +1,10 @@
-use std::fmt::{Display, Formatter};
-use std::string::ToString;
 use crate::tyme::{AbstractCulture, AbstractCultureDay, AbstractTyme, Culture, LoopTyme, Tyme};
+use alloc::string::{String, ToString};
+use core::fmt::{Display, Formatter};
 
-pub static NINE_NAMES: [&str; 9] = ["一九", "二九", "三九", "四九", "五九", "六九", "七九", "八九", "九九"];
+pub static NINE_NAMES: [&str; 9] = [
+  "一九", "二九", "三九", "四九", "五九", "六九", "七九", "八九", "九九",
+];
 
 /// 数九
 #[derive(Debug, Clone)]
@@ -25,13 +27,19 @@ impl Culture for Nine {
 impl Nine {
   pub fn from_index(index: isize) -> Self {
     Self {
-      parent: LoopTyme::from_index(NINE_NAMES.to_vec().iter().map(|x| x.to_string()).collect(), index)
+      parent: LoopTyme::from_index(
+        NINE_NAMES.to_vec().iter().map(|x| x.to_string()).collect(),
+        index,
+      ),
     }
   }
 
   pub fn from_name(name: &str) -> Self {
     Self {
-      parent: LoopTyme::from_name(NINE_NAMES.to_vec().iter().map(|x| x.to_string()).collect(), name)
+      parent: LoopTyme::from_name(
+        NINE_NAMES.to_vec().iter().map(|x| x.to_string()).collect(),
+        name,
+      ),
     }
   }
 
@@ -45,7 +53,7 @@ impl Nine {
 }
 
 impl Display for Nine {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+  fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
     write!(f, "{}", self.get_name())
   }
 }
@@ -58,9 +66,9 @@ impl PartialEq for Nine {
 
 impl Eq for Nine {}
 
-impl Into<LoopTyme> for Nine {
-  fn into(self) -> LoopTyme {
-    self.parent
+impl From<Nine> for LoopTyme {
+  fn from(val: Nine) -> Self {
+    val.parent
   }
 }
 
@@ -68,7 +76,7 @@ impl Into<LoopTyme> for Nine {
 #[derive(Debug, Clone)]
 pub struct NineDay {
   parent: AbstractCultureDay,
-  nine: Nine
+  nine: Nine,
 }
 
 impl Culture for NineDay {
@@ -84,7 +92,7 @@ impl NineDay {
     let culture: AbstractCulture = abstract_tyme.into();
     Self {
       parent: AbstractCultureDay::new(culture, day_index),
-      nine
+      nine,
     }
   }
 
@@ -98,8 +106,13 @@ impl NineDay {
 }
 
 impl Display for NineDay {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{}第{}天", self.get_name(), self.parent.get_day_index() + 1)
+  fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+    write!(
+      f,
+      "{}第{}天",
+      self.get_name(),
+      self.parent.get_day_index() + 1
+    )
   }
 }
 
@@ -111,17 +124,19 @@ impl PartialEq for NineDay {
 
 impl Eq for NineDay {}
 
-impl Into<AbstractCultureDay> for NineDay {
-  fn into(self) -> AbstractCultureDay {
-    self.parent
+impl From<NineDay> for AbstractCultureDay {
+  fn from(val: NineDay) -> Self {
+    val.parent
   }
 }
 
 #[cfg(test)]
 mod tests {
-  use crate::tyme::Culture;
+  use alloc::string::ToString;
+
   use crate::tyme::culture::nine::NineDay;
   use crate::tyme::solar::SolarDay;
+  use crate::tyme::Culture;
 
   #[test]
   fn test0() {

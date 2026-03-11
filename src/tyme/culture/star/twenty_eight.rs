@@ -1,10 +1,14 @@
-use std::fmt::{Display, Formatter};
+use alloc::string::{String, ToString};
+use core::fmt::{Display, Formatter};
 
-use crate::tyme::{Culture, LoopTyme, Tyme};
-use crate::tyme::culture::{Animal, Land, Luck, Zone};
 use crate::tyme::culture::star::seven::SevenStar;
+use crate::tyme::culture::{Animal, Land, Luck, Zone};
+use crate::tyme::{Culture, LoopTyme, Tyme};
 
-pub static TWENTY_EIGHT_STAR_NAMES: [&str; 28] = ["角", "亢", "氐", "房", "心", "尾", "箕", "斗", "牛", "女", "虚", "危", "室", "壁", "奎", "娄", "胃", "昴", "毕", "觜", "参", "井", "鬼", "柳", "星", "张", "翼", "轸"];
+pub static TWENTY_EIGHT_STAR_NAMES: [&str; 28] = [
+  "角", "亢", "氐", "房", "心", "尾", "箕", "斗", "牛", "女", "虚", "危", "室", "壁", "奎", "娄",
+  "胃", "昴", "毕", "觜", "参", "井", "鬼", "柳", "星", "张", "翼", "轸",
+];
 
 /// 二十八宿
 #[derive(Debug, Clone)]
@@ -27,13 +31,27 @@ impl Culture for TwentyEightStar {
 impl TwentyEightStar {
   pub fn from_index(index: isize) -> Self {
     Self {
-      parent: LoopTyme::from_index(TWENTY_EIGHT_STAR_NAMES.to_vec().iter().map(|x| x.to_string()).collect(), index)
+      parent: LoopTyme::from_index(
+        TWENTY_EIGHT_STAR_NAMES
+          .to_vec()
+          .iter()
+          .map(|x| x.to_string())
+          .collect(),
+        index,
+      ),
     }
   }
 
   pub fn from_name(name: &str) -> Self {
     Self {
-      parent: LoopTyme::from_name(TWENTY_EIGHT_STAR_NAMES.to_vec().iter().map(|x| x.to_string()).collect(), name)
+      parent: LoopTyme::from_name(
+        TWENTY_EIGHT_STAR_NAMES
+          .to_vec()
+          .iter()
+          .map(|x| x.to_string())
+          .collect(),
+        name,
+      ),
     }
   }
 
@@ -50,7 +68,11 @@ impl TwentyEightStar {
   }
 
   pub fn get_land(&self) -> Land {
-    Land::from_index([4, 4, 4, 2, 2, 2, 7, 7, 7, 0, 0, 0, 0, 5, 5, 5, 6, 6, 6, 1, 1, 1, 8, 8, 8, 3, 3, 3][self.get_index()])
+    Land::from_index(
+      [
+        4, 4, 4, 2, 2, 2, 7, 7, 7, 0, 0, 0, 0, 5, 5, 5, 6, 6, 6, 1, 1, 1, 8, 8, 8, 3, 3, 3,
+      ][self.get_index()],
+    )
   }
 
   pub fn get_zone(&self) -> Zone {
@@ -62,12 +84,16 @@ impl TwentyEightStar {
   }
 
   pub fn get_luck(&self) -> Luck {
-    Luck::from_index([0, 1, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 0, 1, 0][self.get_index()])
+    Luck::from_index(
+      [
+        0, 1, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 0, 1, 0,
+      ][self.get_index()],
+    )
   }
 }
 
 impl Display for TwentyEightStar {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+  fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
     write!(f, "{}", self.get_name())
   }
 }
@@ -80,8 +106,8 @@ impl PartialEq for TwentyEightStar {
 
 impl Eq for TwentyEightStar {}
 
-impl Into<LoopTyme> for TwentyEightStar {
-  fn into(self) -> LoopTyme {
-    self.parent
+impl From<TwentyEightStar> for LoopTyme {
+  fn from(val: TwentyEightStar) -> Self {
+    val.parent
   }
 }

@@ -1,18 +1,26 @@
-use std::fmt::{Display, Formatter};
+use core::fmt::{Display, Formatter};
 
-use crate::tyme::{AbstractCulture, AbstractCultureDay, Culture, LoopTyme, Tyme};
-use crate::tyme::culture::{Direction, Duty, Element, God, Sound, Taboo, Ten, Terrain, Twenty, Zodiac};
-use crate::tyme::eightchar::EightChar;
+use alloc::format;
+use alloc::string::{String, ToString};
+use alloc::vec::Vec;
+use libm::{ceil, floor};
+
 use crate::tyme::culture::fetus::FetusDay;
 use crate::tyme::culture::star::nine::NineStar;
 use crate::tyme::culture::star::ten::TenStar;
 use crate::tyme::culture::star::twelve::TwelveStar;
 use crate::tyme::culture::star::twenty_eight::TwentyEightStar;
+use crate::tyme::culture::{
+  Direction, Duty, Element, God, Sound, Taboo, Ten, Terrain, Twenty, Zodiac,
+};
+use crate::tyme::eightchar::EightChar;
 use crate::tyme::enums::{HideHeavenStemType, YinYang};
 use crate::tyme::lunar::{LunarDay, LunarHour, LunarMonth, LunarYear};
 use crate::tyme::solar::{SolarDay, SolarTerm, SolarTime};
+use crate::tyme::{AbstractCulture, AbstractCultureDay, Culture, LoopTyme, Tyme};
 
-pub static HEAVEN_STEM_NAMES: [&str; 10] = ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"];
+pub static HEAVEN_STEM_NAMES: [&str; 10] =
+  ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"];
 
 /// 天干（天元）
 #[derive(Debug, Clone)]
@@ -35,13 +43,27 @@ impl Culture for HeavenStem {
 impl HeavenStem {
   pub fn from_index(index: isize) -> Self {
     Self {
-      parent: LoopTyme::from_index(HEAVEN_STEM_NAMES.to_vec().iter().map(|x| x.to_string()).collect(), index)
+      parent: LoopTyme::from_index(
+        HEAVEN_STEM_NAMES
+          .to_vec()
+          .iter()
+          .map(|x| x.to_string())
+          .collect(),
+        index,
+      ),
     }
   }
 
   pub fn from_name(name: &str) -> Self {
     Self {
-      parent: LoopTyme::from_name(HEAVEN_STEM_NAMES.to_vec().iter().map(|x| x.to_string()).collect(), name)
+      parent: LoopTyme::from_name(
+        HEAVEN_STEM_NAMES
+          .to_vec()
+          .iter()
+          .map(|x| x.to_string())
+          .collect(),
+        name,
+      ),
     }
   }
 
@@ -62,7 +84,7 @@ impl HeavenStem {
   pub fn get_yin_yang(&self) -> YinYang {
     match self.get_index() % 2 {
       0 => YinYang::YANG,
-      _ => YinYang::YIN
+      _ => YinYang::YIN,
     }
   }
 
@@ -134,7 +156,7 @@ impl HeavenStem {
 }
 
 impl Display for HeavenStem {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+  fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
     write!(f, "{}", self.get_name())
   }
 }
@@ -147,13 +169,15 @@ impl PartialEq for HeavenStem {
 
 impl Eq for HeavenStem {}
 
-impl Into<LoopTyme> for HeavenStem {
-  fn into(self) -> LoopTyme {
-    self.parent
+impl From<HeavenStem> for LoopTyme {
+  fn from(val: HeavenStem) -> Self {
+    val.parent
   }
 }
 
-pub static EARTH_BRANCH_NAMES: [&str; 12] = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"];
+pub static EARTH_BRANCH_NAMES: [&str; 12] = [
+  "子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥",
+];
 
 /// 地支（地元）
 #[derive(Debug, Clone)]
@@ -176,13 +200,27 @@ impl Culture for EarthBranch {
 impl EarthBranch {
   pub fn from_index(index: isize) -> Self {
     Self {
-      parent: LoopTyme::from_index(EARTH_BRANCH_NAMES.to_vec().iter().map(|x| x.to_string()).collect(), index)
+      parent: LoopTyme::from_index(
+        EARTH_BRANCH_NAMES
+          .to_vec()
+          .iter()
+          .map(|x| x.to_string())
+          .collect(),
+        index,
+      ),
     }
   }
 
   pub fn from_name(name: &str) -> Self {
     Self {
-      parent: LoopTyme::from_name(EARTH_BRANCH_NAMES.to_vec().iter().map(|x| x.to_string()).collect(), name)
+      parent: LoopTyme::from_name(
+        EARTH_BRANCH_NAMES
+          .to_vec()
+          .iter()
+          .map(|x| x.to_string())
+          .collect(),
+        name,
+      ),
     }
   }
 
@@ -203,7 +241,7 @@ impl EarthBranch {
   pub fn get_yin_yang(&self) -> YinYang {
     match self.get_index() % 2 {
       0 => YinYang::YANG,
-      _ => YinYang::YIN
+      _ => YinYang::YIN,
     }
   }
 
@@ -235,14 +273,15 @@ impl EarthBranch {
   /// 藏干列表
   pub fn get_hide_heaven_stems(&self) -> Vec<HideHeavenStem> {
     let mut l: Vec<HideHeavenStem> = Vec::new();
-    l.push(HideHeavenStem::new(self.get_hide_heaven_stem_main(), HideHeavenStemType::MAIN));
-    match self.get_hide_heaven_stem_middle() {
-      Some(x) => l.push(HideHeavenStem::new(x, HideHeavenStemType::MIDDLE)),
-      None => {}
+    l.push(HideHeavenStem::new(
+      self.get_hide_heaven_stem_main(),
+      HideHeavenStemType::MAIN,
+    ));
+    if let Some(x) = self.get_hide_heaven_stem_middle() {
+      l.push(HideHeavenStem::new(x, HideHeavenStemType::MIDDLE))
     }
-    match self.get_hide_heaven_stem_residual() {
-      Some(x) => l.push(HideHeavenStem::new(x, HideHeavenStemType::RESIDUAL)),
-      None => {}
+    if let Some(x) = self.get_hide_heaven_stem_residual() {
+      l.push(HideHeavenStem::new(x, HideHeavenStemType::RESIDUAL))
     }
     l
   }
@@ -277,7 +316,9 @@ impl EarthBranch {
   /// 如果无法合化，返回None
   pub fn combine(&self, target: Self) -> Option<Element> {
     if self.get_combine() == target {
-      Some(Element::from_index([2, 2, 0, 1, 3, 4, 2, 2, 4, 3, 1, 0][self.get_index()]))
+      Some(Element::from_index(
+        [2, 2, 0, 1, 3, 4, 2, 2, 4, 3, 1, 0][self.get_index()],
+      ))
     } else {
       None
     }
@@ -290,7 +331,7 @@ impl EarthBranch {
 }
 
 impl Display for EarthBranch {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+  fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
     write!(f, "{}", self.get_name())
   }
 }
@@ -303,13 +344,19 @@ impl PartialEq for EarthBranch {
 
 impl Eq for EarthBranch {}
 
-impl Into<LoopTyme> for EarthBranch {
-  fn into(self) -> LoopTyme {
-    self.parent
+impl From<EarthBranch> for LoopTyme {
+  fn from(val: EarthBranch) -> Self {
+    val.parent
   }
 }
 
-pub static SIXTY_CYCLE_NAMES: [&str; 60] = ["甲子", "乙丑", "丙寅", "丁卯", "戊辰", "己巳", "庚午", "辛未", "壬申", "癸酉", "甲戌", "乙亥", "丙子", "丁丑", "戊寅", "己卯", "庚辰", "辛巳", "壬午", "癸未", "甲申", "乙酉", "丙戌", "丁亥", "戊子", "己丑", "庚寅", "辛卯", "壬辰", "癸巳", "甲午", "乙未", "丙申", "丁酉", "戊戌", "己亥", "庚子", "辛丑", "壬寅", "癸卯", "甲辰", "乙巳", "丙午", "丁未", "戊申", "己酉", "庚戌", "辛亥", "壬子", "癸丑", "甲寅", "乙卯", "丙辰", "丁巳", "戊午", "己未", "庚申", "辛酉", "壬戌", "癸亥"];
+pub static SIXTY_CYCLE_NAMES: [&str; 60] = [
+  "甲子", "乙丑", "丙寅", "丁卯", "戊辰", "己巳", "庚午", "辛未", "壬申", "癸酉", "甲戌", "乙亥",
+  "丙子", "丁丑", "戊寅", "己卯", "庚辰", "辛巳", "壬午", "癸未", "甲申", "乙酉", "丙戌", "丁亥",
+  "戊子", "己丑", "庚寅", "辛卯", "壬辰", "癸巳", "甲午", "乙未", "丙申", "丁酉", "戊戌", "己亥",
+  "庚子", "辛丑", "壬寅", "癸卯", "甲辰", "乙巳", "丙午", "丁未", "戊申", "己酉", "庚戌", "辛亥",
+  "壬子", "癸丑", "甲寅", "乙卯", "丙辰", "丁巳", "戊午", "己未", "庚申", "辛酉", "壬戌", "癸亥",
+];
 
 /// 六十甲子(六十干支周)
 #[derive(Debug, Clone)]
@@ -332,13 +379,27 @@ impl Culture for SixtyCycle {
 impl SixtyCycle {
   pub fn from_index(index: isize) -> Self {
     Self {
-      parent: LoopTyme::from_index(SIXTY_CYCLE_NAMES.to_vec().iter().map(|x| x.to_string()).collect(), index)
+      parent: LoopTyme::from_index(
+        SIXTY_CYCLE_NAMES
+          .to_vec()
+          .iter()
+          .map(|x| x.to_string())
+          .collect(),
+        index,
+      ),
     }
   }
 
   pub fn from_name(name: &str) -> Self {
     Self {
-      parent: LoopTyme::from_name(SIXTY_CYCLE_NAMES.to_vec().iter().map(|x| x.to_string()).collect(), name)
+      parent: LoopTyme::from_name(
+        SIXTY_CYCLE_NAMES
+          .to_vec()
+          .iter()
+          .map(|x| x.to_string())
+          .collect(),
+        name,
+      ),
     }
   }
 
@@ -363,12 +424,18 @@ impl SixtyCycle {
   }
 
   pub fn get_ten(&self) -> Ten {
-    Ten::from_index((self.get_heaven_stem().get_index() as isize - self.get_earth_branch().get_index() as isize) / 2)
+    Ten::from_index(
+      (self.get_heaven_stem().get_index() as isize - self.get_earth_branch().get_index() as isize)
+        / 2,
+    )
   }
 
   pub fn get_extra_earth_branches(&self) -> Vec<EarthBranch> {
     let mut l: Vec<EarthBranch> = Vec::new();
-    let earth_branch: EarthBranch = EarthBranch::from_index(10 + (self.get_earth_branch().get_index() as isize) - (self.get_heaven_stem().get_index() as isize));
+    let earth_branch: EarthBranch = EarthBranch::from_index(
+      10 + (self.get_earth_branch().get_index() as isize)
+        - (self.get_heaven_stem().get_index() as isize),
+    );
     let next_earth_branch: EarthBranch = earth_branch.next(1);
     l.push(earth_branch);
     l.push(next_earth_branch);
@@ -377,7 +444,7 @@ impl SixtyCycle {
 }
 
 impl Display for SixtyCycle {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+  fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
     write!(f, "{}", self.get_name())
   }
 }
@@ -390,9 +457,9 @@ impl PartialEq for SixtyCycle {
 
 impl Eq for SixtyCycle {}
 
-impl Into<LoopTyme> for SixtyCycle {
-  fn into(self) -> LoopTyme {
-    self.parent
+impl From<SixtyCycle> for LoopTyme {
+  fn from(val: SixtyCycle) -> Self {
+    val.parent
   }
 }
 
@@ -414,8 +481,8 @@ impl HideHeavenStem {
   pub fn new(heaven_stem: HeavenStem, hide_heaven_stem_type: HideHeavenStemType) -> Self {
     Self {
       parent: AbstractCulture::new(),
-      heaven_stem: heaven_stem,
-      hide_heaven_stem_type: hide_heaven_stem_type,
+      heaven_stem,
+      hide_heaven_stem_type,
     }
   }
 
@@ -423,7 +490,7 @@ impl HideHeavenStem {
     Self {
       parent: AbstractCulture::new(),
       heaven_stem: HeavenStem::from_index(heaven_stem_index),
-      hide_heaven_stem_type: hide_heaven_stem_type,
+      hide_heaven_stem_type,
     }
   }
 
@@ -431,7 +498,7 @@ impl HideHeavenStem {
     Self {
       parent: AbstractCulture::new(),
       heaven_stem: HeavenStem::from_name(heaven_stem_name),
-      hide_heaven_stem_type: hide_heaven_stem_type,
+      hide_heaven_stem_type,
     }
   }
 
@@ -445,7 +512,7 @@ impl HideHeavenStem {
 }
 
 impl Display for HideHeavenStem {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+  fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
     write!(f, "{}", self.get_name())
   }
 }
@@ -458,9 +525,9 @@ impl PartialEq for HideHeavenStem {
 
 impl Eq for HideHeavenStem {}
 
-impl Into<AbstractCulture> for HideHeavenStem {
-  fn into(self) -> AbstractCulture {
-    self.parent
+impl From<HideHeavenStem> for AbstractCulture {
+  fn from(val: HideHeavenStem) -> Self {
+    val.parent
   }
 }
 
@@ -468,13 +535,17 @@ impl Into<AbstractCulture> for HideHeavenStem {
 #[derive(Debug, Clone)]
 pub struct HideHeavenStemDay {
   parent: AbstractCultureDay,
-  hide_heaven_stem: HideHeavenStem
+  hide_heaven_stem: HideHeavenStem,
 }
 
 impl Culture for HideHeavenStemDay {
   fn get_name(&self) -> String {
     let heaven_stem: HeavenStem = self.get_hide_heaven_stem().get_heaven_stem();
-    format!("{}{}", heaven_stem.get_name(), heaven_stem.get_element().get_name())
+    format!(
+      "{}{}",
+      heaven_stem.get_name(),
+      heaven_stem.get_element().get_name()
+    )
   }
 }
 
@@ -485,7 +556,7 @@ impl HideHeavenStemDay {
     let culture: AbstractCulture = h1.into();
     Self {
       parent: AbstractCultureDay::new(culture, day_index),
-      hide_heaven_stem: h2
+      hide_heaven_stem: h2,
     }
   }
 
@@ -499,8 +570,13 @@ impl HideHeavenStemDay {
 }
 
 impl Display for HideHeavenStemDay {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{}第{}天", self.get_name(), self.parent.get_day_index() + 1)
+  fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+    write!(
+      f,
+      "{}第{}天",
+      self.get_name(),
+      self.parent.get_day_index() + 1
+    )
   }
 }
 
@@ -512,9 +588,9 @@ impl PartialEq for HideHeavenStemDay {
 
 impl Eq for HideHeavenStemDay {}
 
-impl Into<AbstractCultureDay> for HideHeavenStemDay {
-  fn into(self) -> AbstractCultureDay {
-    self.parent
+impl From<HideHeavenStemDay> for AbstractCultureDay {
+  fn from(val: HideHeavenStemDay) -> Self {
+    val.parent
   }
 }
 
@@ -539,12 +615,10 @@ impl Culture for SixtyCycleYear {
 
 impl SixtyCycleYear {
   pub fn new(year: isize) -> Result<Self, String> {
-    if year < -1 || year > 9999 {
+    if !(-1..=9999).contains(&year) {
       Err(format!("illegal sixty cycle year: {}", year))
     } else {
-      Ok(Self {
-        year
-      })
+      Ok(Self { year })
     }
   }
 
@@ -557,10 +631,12 @@ impl SixtyCycleYear {
   }
 
   pub fn get_first_month(&self) -> SixtyCycleMonth {
-    let h: HeavenStem = HeavenStem::from_index((self.get_sixty_cycle().get_heaven_stem().get_index() as isize + 1) * 2);
+    let h: HeavenStem = HeavenStem::from_index(
+      (self.get_sixty_cycle().get_heaven_stem().get_index() as isize + 1) * 2,
+    );
     SixtyCycleMonth {
       year: *self,
-      month: SixtyCycle::from_name(format!("{}寅", h.get_name()).as_str())
+      month: SixtyCycle::from_name(format!("{}寅", h.get_name()).as_str()),
     }
   }
 
@@ -579,20 +655,25 @@ impl SixtyCycleYear {
   }
 
   pub fn get_twenty(&self) -> Twenty {
-    Twenty::from_index(((self.year as f64 - 1864.0) / 20.0).floor() as isize)
+    Twenty::from_index(floor((self.year as f64 - 1864.0) / 20.0) as isize)
   }
 
   pub fn get_jupiter_direction(&self) -> Direction {
-    Direction::from_index([0, 7, 7, 2, 3, 3, 8, 1, 1, 6, 0, 0][self.get_sixty_cycle().get_earth_branch().get_index()])
+    Direction::from_index(
+      [0, 7, 7, 2, 3, 3, 8, 1, 1, 6, 0, 0][self.get_sixty_cycle().get_earth_branch().get_index()],
+    )
   }
 
   pub fn get_nine_star(&self) -> NineStar {
-    NineStar::from_index(63 + self.get_twenty().get_sixty().get_index() as isize * 3 - self.get_sixty_cycle().get_index() as isize)
+    NineStar::from_index(
+      63 + self.get_twenty().get_sixty().get_index() as isize * 3
+        - self.get_sixty_cycle().get_index() as isize,
+    )
   }
 }
 
 impl Display for SixtyCycleYear {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+  fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
     write!(f, "{}", self.get_name())
   }
 }
@@ -617,7 +698,9 @@ pub struct SixtyCycleMonth {
 impl Tyme for SixtyCycleMonth {
   fn next(&self, n: isize) -> Self {
     SixtyCycleMonth {
-      year: SixtyCycleYear::from_year((self.year.get_year() * 12 + self.get_index_in_year() as isize + n) / 12),
+      year: SixtyCycleYear::from_year(
+        (self.year.get_year() * 12 + self.get_index_in_year() as isize + n) / 12,
+      ),
       month: self.month.next(n),
     }
   }
@@ -631,7 +714,9 @@ impl Culture for SixtyCycleMonth {
 
 impl SixtyCycleMonth {
   pub fn from_index(year: isize, index: isize) -> Self {
-    SixtyCycleYear::from_year(year).get_first_month().next(index)
+    SixtyCycleYear::from_year(year)
+      .get_first_month()
+      .next(index)
   }
 
   pub fn get_sixty_cycle_year(&self) -> SixtyCycleYear {
@@ -651,7 +736,13 @@ impl SixtyCycleMonth {
   }
 
   pub fn get_first_day(&self) -> SixtyCycleDay {
-    SixtyCycleDay::from_solar_day(SolarTerm::from_index(self.year.get_year(), 3 + self.get_index_in_year() as isize * 2).get_solar_day())
+    SixtyCycleDay::from_solar_day(
+      SolarTerm::from_index(
+        self.year.get_year(),
+        3 + self.get_index_in_year() as isize * 2,
+      )
+      .get_solar_day(),
+    )
   }
 
   pub fn get_days(&self) -> Vec<SixtyCycleDay> {
@@ -668,7 +759,7 @@ impl SixtyCycleMonth {
     let n: isize = [7, -1, 1, 3][self.month.get_earth_branch().next(-2).get_index() % 4];
     match n {
       -1 => self.month.get_heaven_stem().get_direction(),
-      _ => Direction::from_index(n)
+      _ => Direction::from_index(n),
     }
   }
 
@@ -678,13 +769,15 @@ impl SixtyCycleMonth {
     if index < 2 {
       index += 3;
     }
-    NineStar::from_index(27 - self.get_year().get_earth_branch().get_index() as isize % 3 * 3 - index)
+    NineStar::from_index(
+      27 - self.get_year().get_earth_branch().get_index() as isize % 3 * 3 - index,
+    )
   }
 }
 
 impl Display for SixtyCycleMonth {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{}{}", self.year.to_string(), self.get_name())
+  fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+    write!(f, "{}{}", self.year, self.get_name())
   }
 }
 
@@ -704,7 +797,7 @@ pub struct SixtyCycleDay {
   /// 公历月
   month: SixtyCycleMonth,
   /// 日柱
-  day: SixtyCycle
+  day: SixtyCycle,
 }
 
 impl Tyme for SixtyCycleDay {
@@ -729,10 +822,8 @@ impl SixtyCycleDay {
       if solar_day.is_before(spring_solar_day) {
         lunar_year = lunar_year.next(-1)
       }
-    } else if lunar_year.get_year() < solar_year {
-      if !solar_day.is_before(spring_solar_day) {
-        lunar_year = lunar_year.next(1);
-      }
+    } else if lunar_year.get_year() < solar_year && !solar_day.is_before(spring_solar_day) {
+      lunar_year = lunar_year.next(1);
     }
     let term: SolarTerm = solar_day.get_term();
     let mut index: isize = term.get_index() as isize - 3;
@@ -743,7 +834,9 @@ impl SixtyCycleDay {
       solar_day,
       month: SixtyCycleMonth {
         year: SixtyCycleYear::from_year(lunar_year.get_year()),
-        month: LunarMonth::from_ym(solar_year, 1).get_sixty_cycle().next((index as f64 * 0.5).floor() as isize),
+        month: LunarMonth::from_ym(solar_year, 1)
+          .get_sixty_cycle()
+          .next(floor(index as f64 * 0.5) as isize),
       },
       day: lunar_day.get_sixty_cycle(),
     }
@@ -776,7 +869,10 @@ impl SixtyCycleDay {
 
   /// 建除十二值神
   pub fn get_duty(&self) -> Duty {
-    Duty::from_index(self.day.get_earth_branch().get_index() as isize - self.get_month().get_earth_branch().get_index() as isize)
+    Duty::from_index(
+      self.day.get_earth_branch().get_index() as isize
+        - self.get_month().get_earth_branch().get_index() as isize,
+    )
   }
 
   /// 太岁方位
@@ -790,12 +886,16 @@ impl SixtyCycleDay {
 
   /// 黄道黑道十二神
   pub fn get_twelve_star(&self) -> TwelveStar {
-    TwelveStar::from_index(self.day.get_earth_branch().get_index() as isize + (8 - self.get_month().get_earth_branch().get_index() as isize % 6) * 2)
+    TwelveStar::from_index(
+      self.day.get_earth_branch().get_index() as isize
+        + (8 - self.get_month().get_earth_branch().get_index() as isize % 6) * 2,
+    )
   }
 
   /// 二十八宿
   pub fn get_twenty_eight_star(&self) -> TwentyEightStar {
-    TwentyEightStar::from_index([10, 18, 26, 6, 14, 22, 2][self.solar_day.get_week().get_index()]).next(-7 * self.day.get_earth_branch().get_index() as isize)
+    TwentyEightStar::from_index([10, 18, 26, 6, 14, 22, 2][self.solar_day.get_week().get_index()])
+      .next(-7 * self.day.get_earth_branch().get_index() as isize)
   }
 
   /// 逐日胎神
@@ -810,12 +910,28 @@ impl SixtyCycleDay {
     let dong_zhi_solar: SolarDay = dong_zhi.get_solar_day();
     let xia_zhi_solar: SolarDay = dong_zhi.next(12).get_solar_day();
     let dong_zhi_solar2: SolarDay = dong_zhi.next(24).get_solar_day();
-    let dong_zhi_index: isize = dong_zhi_solar.get_lunar_day().get_sixty_cycle().get_index() as isize;
+    let dong_zhi_index: isize =
+      dong_zhi_solar.get_lunar_day().get_sixty_cycle().get_index() as isize;
     let xia_zhi_index: isize = xia_zhi_solar.get_lunar_day().get_sixty_cycle().get_index() as isize;
-    let dong_zhi_index2: isize = dong_zhi_solar2.get_lunar_day().get_sixty_cycle().get_index() as isize;
-    let solar_shun_bai: SolarDay = dong_zhi_solar.next(if dong_zhi_index > 29 { 60 - dong_zhi_index } else { -dong_zhi_index });
-    let solar_shun_bai2: SolarDay = dong_zhi_solar2.next(if dong_zhi_index2 > 29 { 60 - dong_zhi_index2 } else { -dong_zhi_index2 });
-    let solar_ni_zi: SolarDay = xia_zhi_solar.next(if xia_zhi_index > 29 { 60 - xia_zhi_index } else { -xia_zhi_index });
+    let dong_zhi_index2: isize = dong_zhi_solar2
+      .get_lunar_day()
+      .get_sixty_cycle()
+      .get_index() as isize;
+    let solar_shun_bai: SolarDay = dong_zhi_solar.next(if dong_zhi_index > 29 {
+      60 - dong_zhi_index
+    } else {
+      -dong_zhi_index
+    });
+    let solar_shun_bai2: SolarDay = dong_zhi_solar2.next(if dong_zhi_index2 > 29 {
+      60 - dong_zhi_index2
+    } else {
+      -dong_zhi_index2
+    });
+    let solar_ni_zi: SolarDay = xia_zhi_solar.next(if xia_zhi_index > 29 {
+      60 - xia_zhi_index
+    } else {
+      -xia_zhi_index
+    });
     let mut offset: isize = 0;
     if !d.is_before(solar_shun_bai) && d.is_before(solar_ni_zi) {
       offset = d.subtract(solar_shun_bai);
@@ -863,7 +979,7 @@ impl SixtyCycleDay {
 }
 
 impl Display for SixtyCycleDay {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+  fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
     write!(f, "{}{}", self.month, self.get_name())
   }
 }
@@ -902,7 +1018,9 @@ impl Culture for SixtyCycleHour {
 impl SixtyCycleHour {
   pub fn from_solar_time(solar_time: SolarTime) -> Self {
     let solar_year: isize = solar_time.get_year();
-    let spring_solar_time: SolarTime = SolarTerm::from_index(solar_year, 3).get_julian_day().get_solar_time();
+    let spring_solar_time: SolarTime = SolarTerm::from_index(solar_year, 3)
+      .get_julian_day()
+      .get_solar_time();
     let lunar_hour: LunarHour = solar_time.get_lunar_hour();
     let lunar_day: LunarDay = lunar_hour.get_lunar_day();
     let mut lunar_year: LunarYear = lunar_day.get_lunar_month().get_lunar_year();
@@ -910,14 +1028,18 @@ impl SixtyCycleHour {
       if solar_time.is_before(spring_solar_time) {
         lunar_year = lunar_year.next(-1);
       }
-    } else if lunar_year.get_year() < solar_year {
-      if !solar_time.is_before(spring_solar_time) {
-        lunar_year = lunar_year.next(1);
-      }
+    } else if lunar_year.get_year() < solar_year && !solar_time.is_before(spring_solar_time) {
+      lunar_year = lunar_year.next(1);
     }
     let term: SolarTerm = solar_time.get_term();
     let mut index: isize = term.get_index() as isize - 3;
-    if index < 0 && term.get_julian_day().get_solar_time().is_after(SolarTerm::from_index(solar_year, 3).get_julian_day().get_solar_time()) {
+    if index < 0
+      && term.get_julian_day().get_solar_time().is_after(
+        SolarTerm::from_index(solar_year, 3)
+          .get_julian_day()
+          .get_solar_time(),
+      )
+    {
       index += 24;
     }
     let mut d: SixtyCycle = lunar_day.get_sixty_cycle();
@@ -932,7 +1054,7 @@ impl SixtyCycleHour {
         solar_day: solar_time.get_solar_day(),
         month: SixtyCycleMonth {
           year: y,
-          month: m.get_sixty_cycle().next((index as f64 * 0.5).floor() as isize),
+          month: m.get_sixty_cycle().next(floor(index as f64 * 0.5) as isize),
         },
         day: d,
       },
@@ -969,11 +1091,16 @@ impl SixtyCycleHour {
     if h == 23 {
       return 0;
     }
-    (h + 1) / 2
+    h.div_ceil(2)
   }
 
   pub fn get_eight_char(&self) -> EightChar {
-    EightChar::from_sixty_cycle(self.get_year(), self.get_month(), self.get_day(), self.get_sixty_cycle())
+    EightChar::from_sixty_cycle(
+      self.get_year(),
+      self.get_month(),
+      self.get_day(),
+      self.get_sixty_cycle(),
+    )
   }
 
   pub fn get_nine_star(&self) -> NineStar {
@@ -981,7 +1108,9 @@ impl SixtyCycleHour {
     let dong_zhi: SolarTerm = SolarTerm::from_index(solar.get_year(), 0);
     let earth_branch_index: isize = self.get_index_in_day() as isize % 12;
     let mut index: isize = [8, 5, 2][self.get_day().get_earth_branch().get_index() % 3];
-    if !solar.is_before(dong_zhi.get_julian_day().get_solar_day()) && solar.is_before(dong_zhi.next(12).get_julian_day().get_solar_day()) {
+    if !solar.is_before(dong_zhi.get_julian_day().get_solar_day())
+      && solar.is_before(dong_zhi.next(12).get_julian_day().get_solar_day())
+    {
       index = 8 + earth_branch_index - index
     } else {
       index -= earth_branch_index;
@@ -990,7 +1119,10 @@ impl SixtyCycleHour {
   }
 
   pub fn get_twelve_star(&self) -> TwelveStar {
-    TwelveStar::from_index(self.hour.get_earth_branch().get_index() as isize + (8 - self.get_day().get_earth_branch().get_index() as isize % 6) * 2)
+    TwelveStar::from_index(
+      self.hour.get_earth_branch().get_index() as isize
+        + (8 - self.get_day().get_earth_branch().get_index() as isize % 6) * 2,
+    )
   }
 
   pub fn get_recommends(&self) -> Vec<Taboo> {
@@ -1003,7 +1135,7 @@ impl SixtyCycleHour {
 }
 
 impl Display for SixtyCycleHour {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+  fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
     write!(f, "{}{}", self.day, self.get_name())
   }
 }
@@ -1040,11 +1172,7 @@ impl ThreePillars {
   }
 
   pub fn from_sixty_cycle(year: SixtyCycle, month: SixtyCycle, day: SixtyCycle) -> Self {
-    Self {
-      year,
-      month,
-      day,
-    }
+    Self { year, month, day }
   }
 
   pub fn get_year(&self) -> SixtyCycle {
@@ -1064,7 +1192,9 @@ impl ThreePillars {
     // 月地支距寅月的偏移值
     let mut m: isize = self.month.get_earth_branch().next(-2).get_index() as isize;
     // 月天干要一致
-    if HeavenStem::from_index((self.year.get_heaven_stem().get_index() as isize + 1) * 2 + m) != self.month.get_heaven_stem() {
+    if HeavenStem::from_index((self.year.get_heaven_stem().get_index() as isize + 1) * 2 + m)
+      != self.month.get_heaven_stem()
+    {
       return l;
     }
     // 1年的立春是辛酉，序号57
@@ -1073,7 +1203,7 @@ impl ThreePillars {
     m *= 2;
     let base_year: isize = start_year - 1;
     if base_year > y {
-      y += 60 * ((base_year - y) as f64 / 60.0).ceil() as isize;
+      y += 60 * ceil((base_year - y) as f64 / 60.0) as isize;
     }
     while y <= end_year {
       // 立春为寅月的开始
@@ -1085,7 +1215,10 @@ impl ThreePillars {
       let mut solar_day: SolarDay = term.get_solar_day();
       if solar_day.get_year() >= start_year {
         // 日干支和节令干支的偏移值
-        let d: isize = self.day.next(-(solar_day.get_lunar_day().get_sixty_cycle().get_index() as isize)).get_index() as isize;
+        let d: isize = self
+          .day
+          .next(-(solar_day.get_lunar_day().get_sixty_cycle().get_index() as isize))
+          .get_index() as isize;
         if d > 0 {
           // 从节令推移天数
           solar_day = solar_day.next(d);
@@ -1102,7 +1235,7 @@ impl ThreePillars {
 }
 
 impl Display for ThreePillars {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+  fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
     write!(f, "{}", self.get_name())
   }
 }
@@ -1117,9 +1250,9 @@ impl Eq for ThreePillars {}
 
 #[cfg(test)]
 mod tests {
-  use crate::tyme::Culture;
   use crate::tyme::sixtycycle::{EarthBranch, HeavenStem, SixtyCycle};
   use crate::tyme::solar::SolarDay;
+  use crate::tyme::Culture;
 
   #[test]
   fn test1() {
@@ -1143,21 +1276,74 @@ mod tests {
 
   #[test]
   fn test5() {
-    assert_eq!(HeavenStem::from_name("丙").get_element(), HeavenStem::from_name("甲").get_element().get_reinforce());
+    assert_eq!(
+      HeavenStem::from_name("丙").get_element(),
+      HeavenStem::from_name("甲").get_element().get_reinforce()
+    );
   }
 
   #[test]
   fn test6() {
-    assert_eq!("比肩", HeavenStem::from_name("甲").get_ten_star(HeavenStem::from_name("甲")).get_name());
-    assert_eq!("劫财", HeavenStem::from_name("甲").get_ten_star(HeavenStem::from_name("乙")).get_name());
-    assert_eq!("食神", HeavenStem::from_name("甲").get_ten_star(HeavenStem::from_name("丙")).get_name());
-    assert_eq!("伤官", HeavenStem::from_name("甲").get_ten_star(HeavenStem::from_name("丁")).get_name());
-    assert_eq!("偏财", HeavenStem::from_name("甲").get_ten_star(HeavenStem::from_name("戊")).get_name());
-    assert_eq!("正财", HeavenStem::from_name("甲").get_ten_star(HeavenStem::from_name("己")).get_name());
-    assert_eq!("七杀", HeavenStem::from_name("甲").get_ten_star(HeavenStem::from_name("庚")).get_name());
-    assert_eq!("正官", HeavenStem::from_name("甲").get_ten_star(HeavenStem::from_name("辛")).get_name());
-    assert_eq!("偏印", HeavenStem::from_name("甲").get_ten_star(HeavenStem::from_name("壬")).get_name());
-    assert_eq!("正印", HeavenStem::from_name("甲").get_ten_star(HeavenStem::from_name("癸")).get_name());
+    assert_eq!(
+      "比肩",
+      HeavenStem::from_name("甲")
+        .get_ten_star(HeavenStem::from_name("甲"))
+        .get_name()
+    );
+    assert_eq!(
+      "劫财",
+      HeavenStem::from_name("甲")
+        .get_ten_star(HeavenStem::from_name("乙"))
+        .get_name()
+    );
+    assert_eq!(
+      "食神",
+      HeavenStem::from_name("甲")
+        .get_ten_star(HeavenStem::from_name("丙"))
+        .get_name()
+    );
+    assert_eq!(
+      "伤官",
+      HeavenStem::from_name("甲")
+        .get_ten_star(HeavenStem::from_name("丁"))
+        .get_name()
+    );
+    assert_eq!(
+      "偏财",
+      HeavenStem::from_name("甲")
+        .get_ten_star(HeavenStem::from_name("戊"))
+        .get_name()
+    );
+    assert_eq!(
+      "正财",
+      HeavenStem::from_name("甲")
+        .get_ten_star(HeavenStem::from_name("己"))
+        .get_name()
+    );
+    assert_eq!(
+      "七杀",
+      HeavenStem::from_name("甲")
+        .get_ten_star(HeavenStem::from_name("庚"))
+        .get_name()
+    );
+    assert_eq!(
+      "正官",
+      HeavenStem::from_name("甲")
+        .get_ten_star(HeavenStem::from_name("辛"))
+        .get_name()
+    );
+    assert_eq!(
+      "偏印",
+      HeavenStem::from_name("甲")
+        .get_ten_star(HeavenStem::from_name("壬"))
+        .get_name()
+    );
+    assert_eq!(
+      "正印",
+      HeavenStem::from_name("甲")
+        .get_ten_star(HeavenStem::from_name("癸"))
+        .get_name()
+    );
   }
 
   #[test]
@@ -1172,9 +1358,18 @@ mod tests {
 
   #[test]
   fn test9() {
-    assert_eq!("石榴木", SixtyCycle::from_name("辛酉").get_sound().get_name());
-    assert_eq!("剑锋金", SixtyCycle::from_name("癸酉").get_sound().get_name());
-    assert_eq!("平地木", SixtyCycle::from_name("己亥").get_sound().get_name());
+    assert_eq!(
+      "石榴木",
+      SixtyCycle::from_name("辛酉").get_sound().get_name()
+    );
+    assert_eq!(
+      "剑锋金",
+      SixtyCycle::from_name("癸酉").get_sound().get_name()
+    );
+    assert_eq!(
+      "平地木",
+      SixtyCycle::from_name("己亥").get_sound().get_name()
+    );
   }
 
   #[test]
@@ -1186,12 +1381,28 @@ mod tests {
 
   #[test]
   fn test11() {
-    assert_eq!("长生", HeavenStem::from_name("丙").get_terrain(EarthBranch::from_name("寅")).get_name());
-    assert_eq!("沐浴", HeavenStem::from_name("辛").get_terrain(EarthBranch::from_name("亥")).get_name());
+    assert_eq!(
+      "长生",
+      HeavenStem::from_name("丙")
+        .get_terrain(EarthBranch::from_name("寅"))
+        .get_name()
+    );
+    assert_eq!(
+      "沐浴",
+      HeavenStem::from_name("辛")
+        .get_terrain(EarthBranch::from_name("亥"))
+        .get_name()
+    );
   }
 
   #[test]
   fn test12() {
-    assert_eq!("甲戌 甲戌 甲戌", SolarDay::from_ymd(1034, 10, 2).get_sixty_cycle_day().get_three_pillars().get_name());
+    assert_eq!(
+      "甲戌 甲戌 甲戌",
+      SolarDay::from_ymd(1034, 10, 2)
+        .get_sixty_cycle_day()
+        .get_three_pillars()
+        .get_name()
+    );
   }
 }

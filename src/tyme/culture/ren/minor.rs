@@ -1,7 +1,9 @@
-use std::fmt::{Display, Formatter};
+use core::fmt::{Display, Formatter};
 
-use crate::tyme::{Culture, LoopTyme, Tyme};
+use alloc::string::{String, ToString};
+
 use crate::tyme::culture::{Element, Luck};
+use crate::tyme::{Culture, LoopTyme, Tyme};
 
 pub static SIX_STAR_NAMES: [&str; 6] = ["大安", "留连", "速喜", "赤口", "小吉", "空亡"];
 
@@ -26,13 +28,27 @@ impl Culture for MinorRen {
 impl MinorRen {
   pub fn from_index(index: isize) -> Self {
     Self {
-      parent: LoopTyme::from_index(SIX_STAR_NAMES.to_vec().iter().map(|x| x.to_string()).collect(), index)
+      parent: LoopTyme::from_index(
+        SIX_STAR_NAMES
+          .to_vec()
+          .iter()
+          .map(|x| x.to_string())
+          .collect(),
+        index,
+      ),
     }
   }
 
   pub fn from_name(name: &str) -> Self {
     Self {
-      parent: LoopTyme::from_name(SIX_STAR_NAMES.to_vec().iter().map(|x| x.to_string()).collect(), name)
+      parent: LoopTyme::from_name(
+        SIX_STAR_NAMES
+          .to_vec()
+          .iter()
+          .map(|x| x.to_string())
+          .collect(),
+        name,
+      ),
     }
   }
 
@@ -56,7 +72,7 @@ impl MinorRen {
 }
 
 impl Display for MinorRen {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+  fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
     write!(f, "{}", self.get_name())
   }
 }
@@ -69,17 +85,17 @@ impl PartialEq for MinorRen {
 
 impl Eq for MinorRen {}
 
-impl Into<LoopTyme> for MinorRen {
-  fn into(self) -> LoopTyme {
-    self.parent
+impl From<MinorRen> for LoopTyme {
+  fn from(val: MinorRen) -> Self {
+    val.parent
   }
 }
 
 #[cfg(test)]
 mod tests {
-  use crate::tyme::Culture;
   use crate::tyme::culture::ren::minor::MinorRen;
   use crate::tyme::lunar::{LunarDay, LunarHour, LunarMonth};
+  use crate::tyme::Culture;
 
   #[test]
   fn test1() {

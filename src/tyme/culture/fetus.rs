@@ -1,10 +1,12 @@
-use std::fmt::{Display, Formatter};
-use std::string::ToString;
 use crate::tyme::culture::Direction;
 use crate::tyme::enums::Side;
-use crate::tyme::{Culture, LoopTyme, Tyme};
 use crate::tyme::lunar::{LunarDay, LunarMonth};
 use crate::tyme::sixtycycle::{SixtyCycle, SixtyCycleDay};
+use crate::tyme::{Culture, LoopTyme, Tyme};
+use core::fmt::{Display, Formatter};
+
+use alloc::format;
+use alloc::string::{String, ToString};
 
 /// 逐日胎神
 #[derive(Debug, Clone)]
@@ -17,9 +19,15 @@ pub struct FetusDay {
 
 impl FetusDay {
   pub fn new(sixty_cycle: SixtyCycle) -> Self {
-    let fetus_heaven_stem: FetusHeavenStem = FetusHeavenStem::from_index((sixty_cycle.get_heaven_stem().get_index() as isize) % 5);
-    let fetus_earth_branch: FetusEarthBranch = FetusEarthBranch::from_index((sixty_cycle.get_earth_branch().get_index() as isize) % 6);
-    let index: isize = [3, 3, 8, 8, 8, 8, 8, 1, 1, 1, 1, 1, 1, 6, 6, 6, 6, 6, 5, 5, 5, 5, 5, 5, 0, 0, 0, 0, 0, -9, -9, -9, -9, -9, -5, -5, -1, -1, -1, -3, -7, -7, -7, -7, -5, 7, 7, 7, 7, 7, 7, 2, 2, 2, 2, 2, 3, 3, 3, 3][sixty_cycle.get_index()];
+    let fetus_heaven_stem: FetusHeavenStem =
+      FetusHeavenStem::from_index((sixty_cycle.get_heaven_stem().get_index() as isize) % 5);
+    let fetus_earth_branch: FetusEarthBranch =
+      FetusEarthBranch::from_index((sixty_cycle.get_earth_branch().get_index() as isize) % 6);
+    let index: isize = [
+      3, 3, 8, 8, 8, 8, 8, 1, 1, 1, 1, 1, 1, 6, 6, 6, 6, 6, 5, 5, 5, 5, 5, 5, 0, 0, 0, 0, 0, -9,
+      -9, -9, -9, -9, -5, -5, -1, -1, -1, -3, -7, -7, -7, -7, -5, 7, 7, 7, 7, 7, 7, 2, 2, 2, 2, 2,
+      3, 3, 3, 3,
+    ][sixty_cycle.get_index()];
     let side: Side = Side::from_code(if index < 0 { 0 } else { 1 }).unwrap();
     let direction: Direction = Direction::from_index(index);
 
@@ -48,7 +56,7 @@ impl FetusDay {
   }
 
   pub fn get_side(&self) -> Side {
-    self.side.clone()
+    self.side
   }
 
   pub fn get_direction(&self) -> Direction {
@@ -56,7 +64,11 @@ impl FetusDay {
   }
 
   fn get_name(&self) -> String {
-    let mut s: String = format!("{}{}", self.fetus_heaven_stem.get_name(), self.fetus_earth_branch.get_name());
+    let mut s: String = format!(
+      "{}{}",
+      self.fetus_heaven_stem.get_name(),
+      self.fetus_earth_branch.get_name()
+    );
     if "门门" == s {
       s = "占大门".to_string();
     } else if "碓磨碓" == s {
@@ -84,7 +96,7 @@ impl FetusDay {
 }
 
 impl Display for FetusDay {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+  fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
     write!(f, "{}", self.get_name())
   }
 }
@@ -120,7 +132,14 @@ impl Culture for FetusHeavenStem {
 impl FetusHeavenStem {
   pub fn from_index(index: isize) -> Self {
     Self {
-      parent: LoopTyme::from_index(FETUS_HEAVEN_STEM_NAMES.to_vec().iter().map(|x| x.to_string()).collect(), index)
+      parent: LoopTyme::from_index(
+        FETUS_HEAVEN_STEM_NAMES
+          .to_vec()
+          .iter()
+          .map(|x| x.to_string())
+          .collect(),
+        index,
+      ),
     }
   }
 
@@ -134,7 +153,7 @@ impl FetusHeavenStem {
 }
 
 impl Display for FetusHeavenStem {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+  fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
     write!(f, "{}", self.get_name())
   }
 }
@@ -147,9 +166,9 @@ impl PartialEq for FetusHeavenStem {
 
 impl Eq for FetusHeavenStem {}
 
-impl Into<LoopTyme> for FetusHeavenStem {
-  fn into(self) -> LoopTyme {
-    self.parent
+impl From<FetusHeavenStem> for LoopTyme {
+  fn from(val: FetusHeavenStem) -> Self {
+    val.parent
   }
 }
 
@@ -176,7 +195,14 @@ impl Culture for FetusEarthBranch {
 impl FetusEarthBranch {
   pub fn from_index(index: isize) -> Self {
     Self {
-      parent: LoopTyme::from_index(FETUS_EARTH_BRANCH_NAMES.to_vec().iter().map(|x| x.to_string()).collect(), index)
+      parent: LoopTyme::from_index(
+        FETUS_EARTH_BRANCH_NAMES
+          .to_vec()
+          .iter()
+          .map(|x| x.to_string())
+          .collect(),
+        index,
+      ),
     }
   }
 
@@ -190,7 +216,7 @@ impl FetusEarthBranch {
 }
 
 impl Display for FetusEarthBranch {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+  fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
     write!(f, "{}", self.get_name())
   }
 }
@@ -203,13 +229,26 @@ impl PartialEq for FetusEarthBranch {
 
 impl Eq for FetusEarthBranch {}
 
-impl Into<LoopTyme> for FetusEarthBranch {
-  fn into(self) -> LoopTyme {
-    self.parent
+impl From<FetusEarthBranch> for LoopTyme {
+  fn from(val: FetusEarthBranch) -> Self {
+    val.parent
   }
 }
 
-pub static FETUS_MONTH_NAMES: [&str; 12] = ["占房床", "占户窗", "占门堂", "占厨灶", "占房床", "占床仓", "占碓磨", "占厕户", "占门房", "占房床", "占灶炉", "占房床"];
+pub static FETUS_MONTH_NAMES: [&str; 12] = [
+  "占房床",
+  "占户窗",
+  "占门堂",
+  "占厨灶",
+  "占房床",
+  "占床仓",
+  "占碓磨",
+  "占厕户",
+  "占门房",
+  "占房床",
+  "占灶炉",
+  "占房床",
+];
 
 /// 逐月胎神（正十二月在床房，二三九十门户中，四六十一灶勿犯，五甲七子八厕凶。）
 #[derive(Debug, Clone)]
@@ -232,14 +271,21 @@ impl Culture for FetusMonth {
 impl FetusMonth {
   pub fn from_index(index: isize) -> Self {
     Self {
-      parent: LoopTyme::from_index(FETUS_MONTH_NAMES.to_vec().iter().map(|x| x.to_string()).collect(), index)
+      parent: LoopTyme::from_index(
+        FETUS_MONTH_NAMES
+          .to_vec()
+          .iter()
+          .map(|x| x.to_string())
+          .collect(),
+        index,
+      ),
     }
   }
 
   pub fn from_lunar_month(lunar_month: LunarMonth) -> Option<Self> {
     match lunar_month.is_leap() {
       true => None,
-      _ => Some(Self::from_index((lunar_month.get_month() as isize) - 1))
+      _ => Some(Self::from_index((lunar_month.get_month() as isize) - 1)),
     }
   }
 
@@ -253,7 +299,7 @@ impl FetusMonth {
 }
 
 impl Display for FetusMonth {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+  fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
     write!(f, "{}", self.get_name())
   }
 }
@@ -266,9 +312,9 @@ impl PartialEq for FetusMonth {
 
 impl Eq for FetusMonth {}
 
-impl Into<LoopTyme> for FetusMonth {
-  fn into(self) -> LoopTyme {
-    self.parent
+impl From<FetusMonth> for LoopTyme {
+  fn from(val: FetusMonth) -> Self {
+    val.parent
   }
 }
 
@@ -278,16 +324,34 @@ mod tests {
 
   #[test]
   fn test1() {
-    assert_eq!("碓磨厕 外东南", SolarDay::from_ymd(2021, 11, 13).get_lunar_day().get_fetus_day().get_name());
+    assert_eq!(
+      "碓磨厕 外东南",
+      SolarDay::from_ymd(2021, 11, 13)
+        .get_lunar_day()
+        .get_fetus_day()
+        .get_name()
+    );
   }
 
   #[test]
   fn test2() {
-    assert_eq!("占门碓 外东南", SolarDay::from_ymd(2021, 11, 12).get_lunar_day().get_fetus_day().get_name());
+    assert_eq!(
+      "占门碓 外东南",
+      SolarDay::from_ymd(2021, 11, 12)
+        .get_lunar_day()
+        .get_fetus_day()
+        .get_name()
+    );
   }
 
   #[test]
   fn test3() {
-    assert_eq!("厨灶厕 外西南", SolarDay::from_ymd(2011, 11, 12).get_lunar_day().get_fetus_day().get_name());
+    assert_eq!(
+      "厨灶厕 外西南",
+      SolarDay::from_ymd(2011, 11, 12)
+        .get_lunar_day()
+        .get_fetus_day()
+        .get_name()
+    );
   }
 }

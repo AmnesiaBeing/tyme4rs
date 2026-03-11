@@ -1,9 +1,13 @@
-use std::fmt::{Display, Formatter};
+use core::fmt::{Display, Formatter};
 
-use crate::tyme::{Culture, LoopTyme, Tyme};
+use alloc::string::{String, ToString};
+
 use crate::tyme::culture::{Direction, Element};
+use crate::tyme::{Culture, LoopTyme, Tyme};
 
-pub static DIPPER_NAMES: [&str; 9] = ["天枢", "天璇", "天玑", "天权", "玉衡", "开阳", "摇光", "洞明", "隐元"];
+pub static DIPPER_NAMES: [&str; 9] = [
+  "天枢", "天璇", "天玑", "天权", "玉衡", "开阳", "摇光", "洞明", "隐元",
+];
 
 /// 北斗九星
 #[derive(Debug, Clone)]
@@ -26,13 +30,27 @@ impl Culture for Dipper {
 impl Dipper {
   pub fn from_index(index: isize) -> Self {
     Self {
-      parent: LoopTyme::from_index(DIPPER_NAMES.to_vec().iter().map(|x| x.to_string()).collect(), index)
+      parent: LoopTyme::from_index(
+        DIPPER_NAMES
+          .to_vec()
+          .iter()
+          .map(|x| x.to_string())
+          .collect(),
+        index,
+      ),
     }
   }
 
   pub fn from_name(name: &str) -> Self {
     Self {
-      parent: LoopTyme::from_name(DIPPER_NAMES.to_vec().iter().map(|x| x.to_string()).collect(), name)
+      parent: LoopTyme::from_name(
+        DIPPER_NAMES
+          .to_vec()
+          .iter()
+          .map(|x| x.to_string())
+          .collect(),
+        name,
+      ),
     }
   }
 
@@ -46,7 +64,7 @@ impl Dipper {
 }
 
 impl Display for Dipper {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+  fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
     write!(f, "{}", self.get_name())
   }
 }
@@ -59,9 +77,9 @@ impl PartialEq for Dipper {
 
 impl Eq for Dipper {}
 
-impl Into<LoopTyme> for Dipper {
-  fn into(self) -> LoopTyme {
-    self.parent
+impl From<Dipper> for LoopTyme {
+  fn from(val: Dipper) -> Self {
+    val.parent
   }
 }
 
@@ -88,13 +106,27 @@ impl Culture for NineStar {
 impl NineStar {
   pub fn from_index(index: isize) -> Self {
     Self {
-      parent: LoopTyme::from_index(NINE_STAR_NAMES.to_vec().iter().map(|x| x.to_string()).collect(), index)
+      parent: LoopTyme::from_index(
+        NINE_STAR_NAMES
+          .to_vec()
+          .iter()
+          .map(|x| x.to_string())
+          .collect(),
+        index,
+      ),
     }
   }
 
   pub fn from_name(name: &str) -> Self {
     Self {
-      parent: LoopTyme::from_name(NINE_STAR_NAMES.to_vec().iter().map(|x| x.to_string()).collect(), name)
+      parent: LoopTyme::from_name(
+        NINE_STAR_NAMES
+          .to_vec()
+          .iter()
+          .map(|x| x.to_string())
+          .collect(),
+        name,
+      ),
     }
   }
 
@@ -124,8 +156,14 @@ impl NineStar {
 }
 
 impl Display for NineStar {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{}{}{}", self.get_name(), self.get_color(), self.get_element())
+  fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+    write!(
+      f,
+      "{}{}{}",
+      self.get_name(),
+      self.get_color(),
+      self.get_element()
+    )
   }
 }
 
@@ -137,18 +175,20 @@ impl PartialEq for NineStar {
 
 impl Eq for NineStar {}
 
-impl Into<LoopTyme> for NineStar {
-  fn into(self) -> LoopTyme {
-    self.parent
+impl From<NineStar> for LoopTyme {
+  fn from(val: NineStar) -> Self {
+    val.parent
   }
 }
 
 #[cfg(test)]
 mod tests {
-  use crate::tyme::Culture;
+  use alloc::string::ToString;
+
   use crate::tyme::culture::star::nine::NineStar;
   use crate::tyme::lunar::{LunarDay, LunarHour, LunarMonth, LunarYear};
   use crate::tyme::solar::SolarDay;
+  use crate::tyme::Culture;
 
   #[test]
   fn test0() {
@@ -201,7 +241,9 @@ mod tests {
 
   #[test]
   fn test7() {
-    let nine_star: NineStar = SolarDay::from_ymd(1985, 2, 19).get_lunar_day().get_nine_star();
+    let nine_star: NineStar = SolarDay::from_ymd(1985, 2, 19)
+      .get_lunar_day()
+      .get_nine_star();
     assert_eq!("五黄土", nine_star.to_string());
     assert_eq!("玉衡", nine_star.get_dipper().to_string());
   }

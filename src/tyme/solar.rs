@@ -1,19 +1,24 @@
-use std::fmt::{Display, Formatter};
-use std::str::FromStr;
-use crate::tyme::{AbstractCulture, AbstractCultureDay, AbstractTyme, Culture, LoopTyme, Tyme};
-use crate::tyme::culture::{Constellation, Phase, PhaseDay, Week};
 use crate::tyme::culture::dog::{Dog, DogDay};
 use crate::tyme::culture::nine::{Nine, NineDay};
 use crate::tyme::culture::phenology::{Phenology, PhenologyDay};
 use crate::tyme::culture::plumrain::{PlumRain, PlumRainDay};
+use crate::tyme::culture::{Constellation, Phase, PhaseDay, Week};
 use crate::tyme::enums::HideHeavenStemType;
 use crate::tyme::festival::SolarFestival;
 use crate::tyme::holiday::LegalHoliday;
-use crate::tyme::jd::{J2000, JulianDay};
+use crate::tyme::jd::{JulianDay, J2000};
 use crate::tyme::lunar::{LunarDay, LunarHour, LunarMonth};
 use crate::tyme::rabbyung::{RabByungDay, RabByungYear};
 use crate::tyme::sixtycycle::{HideHeavenStem, HideHeavenStemDay, SixtyCycleDay, SixtyCycleHour};
 use crate::tyme::util::ShouXingUtil;
+use crate::tyme::{AbstractCulture, AbstractCultureDay, AbstractTyme, Culture, LoopTyme, Tyme};
+use core::fmt::{Display, Formatter};
+use core::str::FromStr;
+
+use alloc::format;
+use alloc::string::{String, ToString};
+use alloc::vec::Vec;
+use libm::{ceil, floor};
 
 /// 公历年
 #[derive(Debug, Copy, Clone)]
@@ -36,12 +41,10 @@ impl Culture for SolarYear {
 
 impl SolarYear {
   pub fn new(year: isize) -> Result<Self, String> {
-    if year < 1 || year > 9999 {
+    if !(1..=9999).contains(&year) {
       Err(format!("illegal solar year: {}", year))
     } else {
-      Ok(Self {
-        year
-      })
+      Ok(Self { year })
     }
   }
 
@@ -164,7 +167,7 @@ impl SolarYear {
 }
 
 impl Display for SolarYear {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+  fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
     write!(f, "{}", self.get_name())
   }
 }
@@ -192,7 +195,10 @@ pub struct SolarHalfYear {
 impl Tyme for SolarHalfYear {
   fn next(&self, n: isize) -> Self {
     let i: isize = self.index as isize + n;
-    Self::from_index((self.get_year() * 2 + i) / 2, AbstractCulture::new().index_of(i, 2))
+    Self::from_index(
+      (self.get_year() * 2 + i) / 2,
+      AbstractCulture::new().index_of(i, 2),
+    )
   }
 }
 
@@ -309,7 +315,7 @@ impl SolarHalfYear {
 }
 
 impl Display for SolarHalfYear {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+  fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
     write!(f, "{}{}", self.year, self.get_name())
   }
 }
@@ -337,7 +343,10 @@ pub struct SolarSeason {
 impl Tyme for SolarSeason {
   fn next(&self, n: isize) -> Self {
     let i: isize = self.index as isize + n;
-    Self::from_index((self.get_year() * 4 + i) / 4, AbstractCulture::new().index_of(i, 4))
+    Self::from_index(
+      (self.get_year() * 4 + i) / 4,
+      AbstractCulture::new().index_of(i, 4),
+    )
   }
 }
 
@@ -438,7 +447,7 @@ impl SolarSeason {
 }
 
 impl Display for SolarSeason {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+  fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
     write!(f, "{}{}", self.year, self.get_name())
   }
 }
@@ -452,7 +461,9 @@ impl PartialEq for SolarSeason {
 impl Eq for SolarSeason {}
 
 /// 公历月名称
-pub static SOLAR_MONTH_NAMES: [&str; 12] = ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"];
+pub static SOLAR_MONTH_NAMES: [&str; 12] = [
+  "1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月",
+];
 
 /// 公历每月天数
 pub static SOLAR_MONTH_DAYS: [usize; 12] = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
@@ -470,7 +481,10 @@ pub struct SolarMonth {
 impl Tyme for SolarMonth {
   fn next(&self, n: isize) -> Self {
     let i: isize = self.month as isize - 1 + n;
-    Self::from_ym((self.get_year() * 12 + i) / 12, AbstractCulture::new().index_of(i, 12) + 1)
+    Self::from_ym(
+      (self.get_year() * 12 + i) / 12,
+      AbstractCulture::new().index_of(i, 12) + 1,
+    )
   }
 }
 
@@ -482,7 +496,7 @@ impl Culture for SolarMonth {
 
 impl SolarMonth {
   pub fn new(year: isize, month: usize) -> Result<Self, String> {
-    if month < 1 || month > 12 {
+    if !(1..=12).contains(&month) {
       Err(format!("illegal solar month: {}", month))
     } else {
       Ok(Self {
@@ -606,7 +620,16 @@ impl SolarMonth {
   /// ```
   pub fn get_week_count(&self, start: usize) -> usize {
     let culture: AbstractCulture = self.parent.into();
-    ((culture.index_of(SolarDay::from_ymd(self.get_year(), self.month, 1).get_week().get_index() as isize - start as isize, 7) + self.get_day_count()) as f64 / 7f64).ceil() as usize
+    ceil(
+      (culture.index_of(
+        SolarDay::from_ymd(self.get_year(), self.month, 1)
+          .get_week()
+          .get_index() as isize
+          - start as isize,
+        7,
+      ) + self.get_day_count()) as f64
+        / 7f64,
+    ) as usize
   }
 
   /// 公历季度
@@ -672,7 +695,7 @@ impl SolarMonth {
 }
 
 impl Display for SolarMonth {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+  fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
     write!(f, "{}{}", self.year, self.get_name())
   }
 }
@@ -685,14 +708,15 @@ impl PartialEq for SolarMonth {
 
 impl Eq for SolarMonth {}
 
-impl Into<AbstractTyme> for SolarMonth {
-  fn into(self) -> AbstractTyme {
-    self.parent
+impl From<SolarMonth> for AbstractTyme {
+  fn from(val: SolarMonth) -> Self {
+    val.parent
   }
 }
 
 /// 公历周名称
-pub static SOLAR_WEEK_NAMES: [&str; 6] = ["第一周", "第二周", "第三周", "第四周", "第五周", "第六周"];
+pub static SOLAR_WEEK_NAMES: [&str; 6] =
+  ["第一周", "第二周", "第三周", "第四周", "第五周", "第六周"];
 
 /// 公历周
 #[derive(Debug, Clone)]
@@ -751,7 +775,10 @@ impl SolarWeek {
     } else {
       let m: SolarMonth = SolarMonth::from_ym(year, month);
       if index >= m.get_week_count(start) {
-        Err(format!("illegal solar week index: {} in month: {}", index, m))
+        Err(format!(
+          "illegal solar week index: {} in month: {}",
+          index, m
+        ))
       } else {
         Ok(Self {
           parent: AbstractTyme::new(),
@@ -828,9 +855,15 @@ impl SolarWeek {
 
   pub fn get_first_day(&self) -> SolarDay {
     let first_day: SolarDay = SolarDay::from_ymd(self.get_year(), self.get_month(), 1);
-    let parent: AbstractTyme = self.parent.into();
+    let parent: AbstractTyme = self.parent;
     let culture: AbstractCulture = parent.into();
-    first_day.next(self.index as isize * 7 - culture.index_of((first_day.get_week().get_index() as isize) - (self.start.get_index() as isize), 7) as isize)
+    first_day.next(
+      self.index as isize * 7
+        - culture.index_of(
+          (first_day.get_week().get_index() as isize) - (self.start.get_index() as isize),
+          7,
+        ) as isize,
+    )
   }
 
   pub fn get_days(&self) -> Vec<SolarDay> {
@@ -867,7 +900,7 @@ impl SolarWeek {
 }
 
 impl Display for SolarWeek {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+  fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
     write!(f, "{}{}", self.month, self.get_name())
   }
 }
@@ -880,14 +913,18 @@ impl PartialEq for SolarWeek {
 
 impl Eq for SolarWeek {}
 
-impl Into<AbstractTyme> for SolarWeek {
-  fn into(self) -> AbstractTyme {
-    self.parent
+impl From<SolarWeek> for AbstractTyme {
+  fn from(val: SolarWeek) -> Self {
+    val.parent
   }
 }
 
 /// 公历日名称
-pub static SOLAR_DAY_NAMES: [&str; 31] = ["1日", "2日", "3日", "4日", "5日", "6日", "7日", "8日", "9日", "10日", "11日", "12日", "13日", "14日", "15日", "16日", "17日", "18日", "19日", "20日", "21日", "22日", "23日", "24日", "25日", "26日", "27日", "28日", "29日", "30日", "31日"];
+pub static SOLAR_DAY_NAMES: [&str; 31] = [
+  "1日", "2日", "3日", "4日", "5日", "6日", "7日", "8日", "9日", "10日", "11日", "12日", "13日",
+  "14日", "15日", "16日", "17日", "18日", "19日", "20日", "21日", "22日", "23日", "24日", "25日",
+  "26日", "27日", "28日", "29日", "30日", "31日",
+];
 
 /// 公历日
 #[derive(Debug, Copy, Clone)]
@@ -919,18 +956,12 @@ impl SolarDay {
       if (day > 4 && day < 15) || day > 31 {
         Err(format!("illegal solar day: {}-{}-{}", year, month, day))
       } else {
-        Ok(Self {
-          month: m,
-          day,
-        })
+        Ok(Self { month: m, day })
       }
     } else if day > m.get_day_count() {
       Err(format!("illegal solar day: {}-{}-{}", year, month, day))
     } else {
-      Ok(Self {
-        month: m,
-        day,
-      })
+      Ok(Self { month: m, day })
     }
   }
 
@@ -1020,7 +1051,20 @@ impl SolarDay {
   pub fn get_solar_week(&self, start: usize) -> SolarWeek {
     let y: isize = self.get_year();
     let m: usize = self.get_month();
-    SolarWeek::from_ym(y, m, ((self.day + SolarDay::from_ymd(y, m, 1).get_week().next(-(start as isize)).get_index()) as f64 / 7.0).ceil() as usize - 1, start)
+    SolarWeek::from_ym(
+      y,
+      m,
+      ceil(
+        (self.day
+          + SolarDay::from_ymd(y, m, 1)
+            .get_week()
+            .next(-(start as isize))
+            .get_index()) as f64
+          / 7.0,
+      ) as usize
+        - 1,
+      start,
+    )
   }
 
   /// 节气
@@ -1089,7 +1133,11 @@ impl SolarDay {
     }
     let a_month: usize = self.get_month();
     let b_month: usize = target.get_month();
-    if a_month != b_month { a_month < b_month } else { self.day < target.get_day() }
+    if a_month != b_month {
+      a_month < b_month
+    } else {
+      self.day < target.get_day()
+    }
   }
 
   pub fn is_after(&self, target: SolarDay) -> bool {
@@ -1100,7 +1148,11 @@ impl SolarDay {
     }
     let a_month: usize = self.get_month();
     let b_month: usize = target.get_month();
-    if a_month != b_month { a_month > b_month } else { self.day > target.get_day() }
+    if a_month != b_month {
+      a_month > b_month
+    } else {
+      self.day > target.get_day()
+    }
   }
 
   /// 位于当年的索引
@@ -1165,7 +1217,7 @@ impl SolarDay {
   pub fn get_constellation(&self) -> Constellation {
     let mut index: isize = 8;
     let y: usize = self.get_month() * 100 + self.day;
-    if y > 1221 || y < 120 {
+    if !(120..=1221).contains(&y) {
       index = 9;
     } else if y < 219 {
       index = 10;
@@ -1206,7 +1258,11 @@ impl SolarDay {
     // 第1个庚日
     let mut start: SolarDay = xia_zhi.get_solar_day();
     // 第3个庚日，即初伏第1天
-    let parent: LoopTyme = start.get_lunar_day().get_sixty_cycle().get_heaven_stem().into();
+    let parent: LoopTyme = start
+      .get_lunar_day()
+      .get_sixty_cycle()
+      .get_heaven_stem()
+      .into();
     start = start.next(parent.steps_to(6) as isize + 20);
     let mut days: isize = self.subtract(start);
     // 初伏以前
@@ -1281,7 +1337,10 @@ impl SolarDay {
       index = 2;
     }
     let term: SolarTerm = d.get_solar_term();
-    PhenologyDay::new(Phenology::from_index(term.get_year(), term.get_index() as isize * 3 + index), (day_index - index * 5) as usize)
+    PhenologyDay::new(
+      Phenology::from_index(term.get_year(), term.get_index() as isize * 3 + index),
+      (day_index - index * 5) as usize,
+    )
   }
 
   /// 候
@@ -1291,14 +1350,15 @@ impl SolarDay {
 
   /// 人元司令分野
   pub fn get_hide_heaven_stem_day(&self) -> HideHeavenStemDay {
-    let day_counts: [usize;6] = [3, 5, 7, 9, 10, 30];
+    let day_counts: [usize; 6] = [3, 5, 7, 9, 10, 30];
     let mut term: SolarTerm = self.get_term();
     if term.is_qi() {
       term = term.next(-1);
     }
     let mut day_index: usize = self.subtract(term.get_solar_day()) as usize;
     let start_index: usize = (term.get_index() - 1) * 3;
-    let data: &str = &"93705542220504xx1513904541632524533533105544806564xx7573304542018584xx95"[start_index..start_index + 6];
+    let data: &str = &"93705542220504xx1513904541632524533533105544806564xx7573304542018584xx95"
+      [start_index..start_index + 6];
     let mut days: usize = 0;
     let mut heaven_stem_index: isize = 0;
     let mut type_index: usize = 0;
@@ -1317,7 +1377,13 @@ impl SolarDay {
       }
       type_index += 1;
     }
-    HideHeavenStemDay::new(HideHeavenStem::from_index(heaven_stem_index, HideHeavenStemType::from_code(type_index).unwrap()), day_index)
+    HideHeavenStemDay::new(
+      HideHeavenStem::from_index(
+        heaven_stem_index,
+        HideHeavenStemType::from_code(type_index).unwrap(),
+      ),
+      day_index,
+    )
   }
 
   pub fn get_plum_rain_day(&self) -> Option<PlumRainDay> {
@@ -1325,19 +1391,31 @@ impl SolarDay {
     let grain_in_ear: SolarTerm = SolarTerm::from_index(self.get_year(), 11);
     let mut start: SolarDay = grain_in_ear.get_solar_day();
     // 芒种后的第1个丙日
-    let mut parent: LoopTyme = start.get_lunar_day().get_sixty_cycle().get_heaven_stem().into();
+    let mut parent: LoopTyme = start
+      .get_lunar_day()
+      .get_sixty_cycle()
+      .get_heaven_stem()
+      .into();
     start = start.next(parent.steps_to(2) as isize);
 
     // 小暑
     let mut end: SolarDay = grain_in_ear.next(2).get_solar_day();
     // 小暑后的第1个未日
-    parent = end.get_lunar_day().get_sixty_cycle().get_earth_branch().into();
+    parent = end
+      .get_lunar_day()
+      .get_sixty_cycle()
+      .get_earth_branch()
+      .into();
     end = end.next(parent.steps_to(7) as isize);
 
     if self.is_before(start) || self.is_after(end) {
       return None;
     }
-    Some(if self.eq(&end) { PlumRainDay::new(PlumRain::from_index(1), 0) } else { PlumRainDay::new(PlumRain::from_index(0), self.subtract(start) as usize)})
+    Some(if self.eq(&end) {
+      PlumRainDay::new(PlumRain::from_index(1), 0)
+    } else {
+      PlumRainDay::new(PlumRain::from_index(0), self.subtract(start) as usize)
+    })
   }
 
   /// 法定假日
@@ -1396,14 +1474,16 @@ impl SolarDay {
 }
 
 impl Display for SolarDay {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+  fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
     write!(f, "{}{}", self.month, self.get_name())
   }
 }
 
 impl PartialEq for SolarDay {
   fn eq(&self, other: &Self) -> bool {
-    self.get_year() == other.get_year() && self.get_month() == other.get_month() && self.get_day() == other.get_day()
+    self.get_year() == other.get_year()
+      && self.get_month() == other.get_month()
+      && self.get_day() == other.get_day()
   }
 }
 
@@ -1425,7 +1505,7 @@ pub struct SolarTime {
 impl Tyme for SolarTime {
   fn next(&self, n: isize) -> Self {
     if n == 0 {
-      self.clone()
+      *self
     } else {
       let mut ts: isize = (self.second as isize) + n;
       let mut tm: isize = (self.minute as isize) + ts / 60;
@@ -1448,7 +1528,14 @@ impl Tyme for SolarTime {
       }
 
       let d: SolarDay = self.day.next(td);
-      Self::from_ymd_hms(d.get_year(), d.get_month(), d.get_day(), th as usize, tm as usize, ts as usize)
+      Self::from_ymd_hms(
+        d.get_year(),
+        d.get_month(),
+        d.get_day(),
+        th as usize,
+        tm as usize,
+        ts as usize,
+      )
     }
   }
 }
@@ -1460,7 +1547,14 @@ impl Culture for SolarTime {
 }
 
 impl SolarTime {
-  pub fn new(year: isize, month: usize, day: usize, hour: usize, minute: usize, second: usize) -> Result<Self, String> {
+  pub fn new(
+    year: isize,
+    month: usize,
+    day: usize,
+    hour: usize,
+    minute: usize,
+    second: usize,
+  ) -> Result<Self, String> {
     if hour > 23 {
       Err(format!("illegal hour: {}", hour))
     } else if minute > 59 {
@@ -1477,7 +1571,14 @@ impl SolarTime {
     }
   }
 
-  pub fn from_ymd_hms(year: isize, month: usize, day: usize, hour: usize, minute: usize, second: usize) -> Self {
+  pub fn from_ymd_hms(
+    year: isize,
+    month: usize,
+    day: usize,
+    hour: usize,
+    minute: usize,
+    second: usize,
+  ) -> Self {
     Self::new(year, month, day, hour, minute, second).unwrap()
   }
 
@@ -1556,7 +1657,11 @@ impl SolarTime {
     if self.hour != target.get_hour() {
       return self.hour < target.get_hour();
     }
-    if self.minute != target.get_minute() { self.minute < target.get_minute() } else { self.second < target.get_second() }
+    if self.minute != target.get_minute() {
+      self.minute < target.get_minute()
+    } else {
+      self.second < target.get_second()
+    }
   }
 
   pub fn is_after(&self, target: SolarTime) -> bool {
@@ -1566,7 +1671,11 @@ impl SolarTime {
     if self.hour != target.get_hour() {
       return self.hour > target.get_hour();
     }
-    if self.minute != target.get_minute() { self.minute > target.get_minute() } else { self.second > target.get_second() }
+    if self.minute != target.get_minute() {
+      self.minute > target.get_minute()
+    } else {
+      self.second > target.get_second()
+    }
   }
 
   /// 节气
@@ -1606,7 +1715,14 @@ impl SolarTime {
   /// let jd: JulianDay = SolarTime::from_ymd_hms(2023, 12, 7, 13, 20, 0).get_julian_day();
   /// ```
   pub fn get_julian_day(&self) -> JulianDay {
-    JulianDay::from_ymd_hms(self.get_year(), self.get_month(), self.get_day(), self.hour, self.minute, self.second)
+    JulianDay::from_ymd_hms(
+      self.get_year(),
+      self.get_month(),
+      self.get_day(),
+      self.hour,
+      self.minute,
+      self.second,
+    )
   }
 
   pub fn subtract(&self, target: SolarTime) -> isize {
@@ -1624,7 +1740,14 @@ impl SolarTime {
 
   pub fn get_lunar_hour(&self) -> LunarHour {
     let d: LunarDay = self.day.get_lunar_day();
-    LunarHour::from_ymd_hms(d.get_year(), d.get_month(), d.get_day(), self.hour, self.minute, self.second)
+    LunarHour::from_ymd_hms(
+      d.get_year(),
+      d.get_month(),
+      d.get_day(),
+      self.hour,
+      self.minute,
+      self.second,
+    )
   }
 
   /// 干支时辰
@@ -1633,7 +1756,11 @@ impl SolarTime {
   }
 
   pub fn get_phase(&self) -> Phase {
-    let month: LunarMonth = self.get_lunar_hour().get_lunar_day().get_lunar_month().next(1);
+    let month: LunarMonth = self
+      .get_lunar_hour()
+      .get_lunar_day()
+      .get_lunar_month()
+      .next(1);
     let mut p: Phase = Phase::from_index(month.get_year(), month.get_month_with_leap(), 0);
     while p.get_solar_time().is_after(*self) {
       p = p.next(-1);
@@ -1643,21 +1770,27 @@ impl SolarTime {
 }
 
 impl Display for SolarTime {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+  fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
     write!(f, "{} {}", self.day, self.get_name())
   }
 }
 
 impl PartialEq for SolarTime {
   fn eq(&self, other: &Self) -> bool {
-    self.get_solar_day() == other.get_solar_day() && self.get_hour() == other.get_hour() && self.get_minute() == other.get_minute() && self.get_second() == other.get_second()
+    self.get_solar_day() == other.get_solar_day()
+      && self.get_hour() == other.get_hour()
+      && self.get_minute() == other.get_minute()
+      && self.get_second() == other.get_second()
   }
 }
 
 impl Eq for SolarTime {}
 
 /// 节气名称
-pub static SOLAR_TERM_NAMES: [&str; 24] = ["冬至", "小寒", "大寒", "立春", "雨水", "惊蛰", "春分", "清明", "谷雨", "立夏", "小满", "芒种", "夏至", "小暑", "大暑", "立秋", "处暑", "白露", "秋分", "寒露", "霜降", "立冬", "小雪", "大雪"];
+pub static SOLAR_TERM_NAMES: [&str; 24] = [
+  "冬至", "小寒", "大寒", "立春", "雨水", "惊蛰", "春分", "清明", "谷雨", "立夏", "小满", "芒种",
+  "夏至", "小暑", "大暑", "立秋", "处暑", "白露", "秋分", "寒露", "霜降", "立冬", "小雪", "大雪",
+];
 
 /// 节气
 #[derive(Debug, Clone)]
@@ -1673,7 +1806,10 @@ impl Tyme for SolarTerm {
   fn next(&self, n: isize) -> Self {
     let size: isize = self.get_size() as isize;
     let i: isize = self.get_index() as isize + n;
-    Self::from_index((self.year * size + i) / size, self.parent.index_of_index(i) as isize)
+    Self::from_index(
+      (self.year * size + i) / size,
+      self.parent.index_of_index(i) as isize,
+    )
   }
 }
 
@@ -1687,10 +1823,17 @@ impl SolarTerm {
   pub fn from_index(year: isize, index: isize) -> Self {
     let size: isize = SOLAR_TERM_NAMES.len() as isize;
     let y: isize = (year * size + index) / size;
-    let parent: LoopTyme = LoopTyme::from_index(SOLAR_TERM_NAMES.to_vec().iter().map(|x| x.to_string()).collect(), index);
-    let jd: f64 = ((y as f64 - 2000.0) * 365.2422 + 180.0).floor();
+    let parent: LoopTyme = LoopTyme::from_index(
+      SOLAR_TERM_NAMES
+        .to_vec()
+        .iter()
+        .map(|x| x.to_string())
+        .collect(),
+      index,
+    );
+    let jd: f64 = floor((y as f64 - 2000.0) * 365.2422 + 180.0);
     // 355是2000.12冬至，得到较靠近jd的冬至估计值
-    let mut w: f64 = ((jd - 355.0 + 183.0) / 365.2422).floor() * 365.2422 + 355.0;
+    let mut w: f64 = floor((jd - 355.0 + 183.0) / 365.2422) * 365.2422 + 355.0;
     if ShouXingUtil::calc_qi(w) > jd {
       w -= 365.2422;
     }
@@ -1703,10 +1846,17 @@ impl SolarTerm {
   }
 
   pub fn new(year: isize, name: &str) -> Result<Self, String> {
-    let parent: LoopTyme = LoopTyme::from_name(SOLAR_TERM_NAMES.to_vec().iter().map(|x| x.to_string()).collect(), name);
-    let jd: f64 = (((year - 2000) as f64) * 365.2422 + 180.0).floor();
+    let parent: LoopTyme = LoopTyme::from_name(
+      SOLAR_TERM_NAMES
+        .to_vec()
+        .iter()
+        .map(|x| x.to_string())
+        .collect(),
+      name,
+    );
+    let jd: f64 = floor(((year - 2000) as f64) * 365.2422 + 180.0);
     // 355是2000.12冬至，得到较靠近jd的冬至估计值
-    let mut w: f64 = ((jd - 355.0 + 183.0) / 365.2422).floor() * 365.2422 + 355.0;
+    let mut w: f64 = floor((jd - 355.0 + 183.0) / 365.2422) * 365.2422 + 355.0;
     if ShouXingUtil::calc_qi(w) > jd {
       w -= 365.2422;
     }
@@ -1757,7 +1907,7 @@ impl SolarTerm {
   /// let is_jie: bool = term.is_qi();
   /// ```
   pub fn is_qi(&self) -> bool {
-    self.get_index() % 2 == 0
+    self.get_index().is_multiple_of(2)
   }
 
   /// 儒略日（精确到秒）
@@ -1814,7 +1964,7 @@ impl SolarTerm {
 }
 
 impl Display for SolarTerm {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+  fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
     write!(f, "{}", self.get_name())
   }
 }
@@ -1827,9 +1977,9 @@ impl PartialEq for SolarTerm {
 
 impl Eq for SolarTerm {}
 
-impl Into<LoopTyme> for SolarTerm {
-  fn into(self) -> LoopTyme {
-    self.parent
+impl From<SolarTerm> for LoopTyme {
+  fn from(val: SolarTerm) -> Self {
+    val.parent
   }
 }
 
@@ -1892,8 +2042,13 @@ impl SolarTermDay {
 }
 
 impl Display for SolarTermDay {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{}第{}天", self.get_name(), self.parent.get_day_index() + 1)
+  fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+    write!(
+      f,
+      "{}第{}天",
+      self.get_name(),
+      self.parent.get_day_index() + 1
+    )
   }
 }
 
@@ -1905,18 +2060,22 @@ impl PartialEq for SolarTermDay {
 
 impl Eq for SolarTermDay {}
 
-impl Into<AbstractCultureDay> for SolarTermDay {
-  fn into(self) -> AbstractCultureDay {
-    self.parent
+impl From<SolarTermDay> for AbstractCultureDay {
+  fn from(val: SolarTermDay) -> Self {
+    val.parent
   }
 }
 
 #[cfg(test)]
 mod tests {
-  use crate::tyme::{Culture, Tyme};
+  use alloc::string::ToString;
+
   use crate::tyme::lunar::LunarWeek;
   use crate::tyme::sixtycycle::HideHeavenStemDay;
-  use crate::tyme::solar::{SolarDay, SolarHalfYear, SolarMonth, SolarSeason, SolarTerm, SolarTime, SolarWeek, SolarYear};
+  use crate::tyme::solar::{
+    SolarDay, SolarHalfYear, SolarMonth, SolarSeason, SolarTerm, SolarTime, SolarWeek, SolarYear,
+  };
+  use crate::tyme::{Culture, Tyme};
 
   #[test]
   fn test0() {
@@ -1939,100 +2098,200 @@ mod tests {
 
   #[test]
   fn test3() {
-    assert_eq!(0, SolarDay::from_ymd(2023, 1, 1).subtract(SolarDay::from_ymd(2023, 1, 1)));
-    assert_eq!(1, SolarDay::from_ymd(2023, 1, 2).subtract(SolarDay::from_ymd(2023, 1, 1)));
-    assert_eq!(-1, SolarDay::from_ymd(2023, 1, 1).subtract(SolarDay::from_ymd(2023, 1, 2)));
-    assert_eq!(31, SolarDay::from_ymd(2023, 2, 1).subtract(SolarDay::from_ymd(2023, 1, 1)));
-    assert_eq!(-31, SolarDay::from_ymd(2023, 1, 1).subtract(SolarDay::from_ymd(2023, 2, 1)));
-    assert_eq!(365, SolarDay::from_ymd(2024, 1, 1).subtract(SolarDay::from_ymd(2023, 1, 1)));
-    assert_eq!(-365, SolarDay::from_ymd(2023, 1, 1).subtract(SolarDay::from_ymd(2024, 1, 1)));
-    assert_eq!(1, SolarDay::from_ymd(1582, 10, 15).subtract(SolarDay::from_ymd(1582, 10, 4)));
+    assert_eq!(
+      0,
+      SolarDay::from_ymd(2023, 1, 1).subtract(SolarDay::from_ymd(2023, 1, 1))
+    );
+    assert_eq!(
+      1,
+      SolarDay::from_ymd(2023, 1, 2).subtract(SolarDay::from_ymd(2023, 1, 1))
+    );
+    assert_eq!(
+      -1,
+      SolarDay::from_ymd(2023, 1, 1).subtract(SolarDay::from_ymd(2023, 1, 2))
+    );
+    assert_eq!(
+      31,
+      SolarDay::from_ymd(2023, 2, 1).subtract(SolarDay::from_ymd(2023, 1, 1))
+    );
+    assert_eq!(
+      -31,
+      SolarDay::from_ymd(2023, 1, 1).subtract(SolarDay::from_ymd(2023, 2, 1))
+    );
+    assert_eq!(
+      365,
+      SolarDay::from_ymd(2024, 1, 1).subtract(SolarDay::from_ymd(2023, 1, 1))
+    );
+    assert_eq!(
+      -365,
+      SolarDay::from_ymd(2023, 1, 1).subtract(SolarDay::from_ymd(2024, 1, 1))
+    );
+    assert_eq!(
+      1,
+      SolarDay::from_ymd(1582, 10, 15).subtract(SolarDay::from_ymd(1582, 10, 4))
+    );
   }
 
   #[test]
   fn test4() {
-    assert_eq!("1582年10月4日", SolarDay::from_ymd(1582, 10, 15).next(-1).to_string());
+    assert_eq!(
+      "1582年10月4日",
+      SolarDay::from_ymd(1582, 10, 15).next(-1).to_string()
+    );
   }
 
   #[test]
   fn test5() {
-    assert_eq!("2000年3月1日", SolarDay::from_ymd(2000, 2, 28).next(2).to_string());
+    assert_eq!(
+      "2000年3月1日",
+      SolarDay::from_ymd(2000, 2, 28).next(2).to_string()
+    );
   }
 
   #[test]
   fn test6() {
-    assert_eq!("农历庚子年闰四月初二", SolarDay::from_ymd(2020, 5, 24).get_lunar_day().to_string());
+    assert_eq!(
+      "农历庚子年闰四月初二",
+      SolarDay::from_ymd(2020, 5, 24).get_lunar_day().to_string()
+    );
   }
 
   #[test]
   fn test7() {
-    assert_eq!(31, SolarDay::from_ymd(2020, 5, 24).subtract(SolarDay::from_ymd(2020, 4, 23)));
+    assert_eq!(
+      31,
+      SolarDay::from_ymd(2020, 5, 24).subtract(SolarDay::from_ymd(2020, 4, 23))
+    );
   }
 
   #[test]
   fn test8() {
-    assert_eq!("农历丙子年十一月十二", SolarDay::from_ymd(16, 11, 30).get_lunar_day().to_string());
+    assert_eq!(
+      "农历丙子年十一月十二",
+      SolarDay::from_ymd(16, 11, 30).get_lunar_day().to_string()
+    );
   }
 
   #[test]
   fn test9() {
-    assert_eq!("霜降", SolarDay::from_ymd(2023, 10, 27).get_term().to_string());
+    assert_eq!(
+      "霜降",
+      SolarDay::from_ymd(2023, 10, 27).get_term().to_string()
+    );
   }
 
   #[test]
   fn test10() {
-    assert_eq!("豺乃祭兽第4天", SolarDay::from_ymd(2023, 10, 27).get_phenology_day().to_string());
+    assert_eq!(
+      "豺乃祭兽第4天",
+      SolarDay::from_ymd(2023, 10, 27)
+        .get_phenology_day()
+        .to_string()
+    );
   }
 
   #[test]
   fn test11() {
-    assert_eq!("初候", SolarDay::from_ymd(2023, 10, 27).get_phenology_day().get_phenology().get_three_phenology().to_string());
+    assert_eq!(
+      "初候",
+      SolarDay::from_ymd(2023, 10, 27)
+        .get_phenology_day()
+        .get_phenology()
+        .get_three_phenology()
+        .to_string()
+    );
   }
 
   #[test]
   fn test22() {
-    assert_eq!("甲辰", SolarDay::from_ymd(2024, 2, 10).get_lunar_day().get_lunar_month().get_lunar_year().get_sixty_cycle().get_name());
+    assert_eq!(
+      "甲辰",
+      SolarDay::from_ymd(2024, 2, 10)
+        .get_lunar_day()
+        .get_lunar_month()
+        .get_lunar_year()
+        .get_sixty_cycle()
+        .get_name()
+    );
   }
 
   #[test]
   fn test23() {
-    assert_eq!("癸卯", SolarDay::from_ymd(2024, 2, 9).get_lunar_day().get_lunar_month().get_lunar_year().get_sixty_cycle().get_name());
+    assert_eq!(
+      "癸卯",
+      SolarDay::from_ymd(2024, 2, 9)
+        .get_lunar_day()
+        .get_lunar_month()
+        .get_lunar_year()
+        .get_sixty_cycle()
+        .get_name()
+    );
   }
 
   #[test]
   fn test24() {
     assert_eq!("上半年", SolarHalfYear::from_index(2023, 0).get_name());
-    assert_eq!("2023年上半年", SolarHalfYear::from_index(2023, 0).to_string());
+    assert_eq!(
+      "2023年上半年",
+      SolarHalfYear::from_index(2023, 0).to_string()
+    );
   }
 
   #[test]
   fn test25() {
     assert_eq!("下半年", SolarHalfYear::from_index(2023, 1).get_name());
-    assert_eq!("2023年下半年", SolarHalfYear::from_index(2023, 1).to_string());
+    assert_eq!(
+      "2023年下半年",
+      SolarHalfYear::from_index(2023, 1).to_string()
+    );
   }
 
   #[test]
   fn test26() {
-    assert_eq!("下半年", SolarHalfYear::from_index(2023, 0).next(1).get_name());
-    assert_eq!("2023年下半年", SolarHalfYear::from_index(2023, 0).next(1).to_string());
+    assert_eq!(
+      "下半年",
+      SolarHalfYear::from_index(2023, 0).next(1).get_name()
+    );
+    assert_eq!(
+      "2023年下半年",
+      SolarHalfYear::from_index(2023, 0).next(1).to_string()
+    );
   }
 
   #[test]
   fn test27() {
-    assert_eq!("上半年", SolarHalfYear::from_index(2023, 0).next(2).get_name());
-    assert_eq!("2024年上半年", SolarHalfYear::from_index(2023, 0).next(2).to_string());
+    assert_eq!(
+      "上半年",
+      SolarHalfYear::from_index(2023, 0).next(2).get_name()
+    );
+    assert_eq!(
+      "2024年上半年",
+      SolarHalfYear::from_index(2023, 0).next(2).to_string()
+    );
   }
 
   #[test]
   fn test28() {
-    assert_eq!("上半年", SolarHalfYear::from_index(2023, 0).next(-2).get_name());
-    assert_eq!("2022年上半年", SolarHalfYear::from_index(2023, 0).next(-2).to_string());
+    assert_eq!(
+      "上半年",
+      SolarHalfYear::from_index(2023, 0).next(-2).get_name()
+    );
+    assert_eq!(
+      "2022年上半年",
+      SolarHalfYear::from_index(2023, 0).next(-2).to_string()
+    );
   }
 
   #[test]
   fn test29() {
-    assert_eq!("2021年上半年", SolarHalfYear::from_index(2023, 0).next(-4).to_string());
-    assert_eq!("2021年下半年", SolarHalfYear::from_index(2023, 0).next(-3).to_string());
+    assert_eq!(
+      "2021年上半年",
+      SolarHalfYear::from_index(2023, 0).next(-4).to_string()
+    );
+    assert_eq!(
+      "2021年下半年",
+      SolarHalfYear::from_index(2023, 0).next(-3).to_string()
+    );
   }
 
   #[test]
@@ -2099,28 +2358,40 @@ mod tests {
     assert_eq!("冬至", dong_zhi.get_name());
     assert_eq!(0, dong_zhi.get_index());
     // 公历日
-    assert_eq!("2022年12月22日", dong_zhi.get_julian_day().get_solar_day().to_string());
+    assert_eq!(
+      "2022年12月22日",
+      dong_zhi.get_julian_day().get_solar_day().to_string()
+    );
     assert_eq!("2022年12月22日", dong_zhi.get_solar_day().to_string());
 
     // 冬至顺推23次，就是大雪 2023-12-07 17:32:55
     let da_xue: SolarTerm = dong_zhi.next(23);
     assert_eq!("大雪", da_xue.get_name());
     assert_eq!(23, da_xue.get_index());
-    assert_eq!("2023年12月7日", da_xue.get_julian_day().get_solar_day().to_string());
+    assert_eq!(
+      "2023年12月7日",
+      da_xue.get_julian_day().get_solar_day().to_string()
+    );
     assert_eq!("2023年12月7日", da_xue.get_solar_day().to_string());
 
     // 冬至逆推2次，就是上一年的小雪 2022-11-22 16:20:28
     let xiao_xue: SolarTerm = dong_zhi.next(-2);
     assert_eq!("小雪", xiao_xue.get_name());
     assert_eq!(22, xiao_xue.get_index());
-    assert_eq!("2022年11月22日", xiao_xue.get_julian_day().get_solar_day().to_string());
+    assert_eq!(
+      "2022年11月22日",
+      xiao_xue.get_julian_day().get_solar_day().to_string()
+    );
     assert_eq!("2022年11月22日", xiao_xue.get_solar_day().to_string());
 
     // 冬至顺推24次，就是下一个冬至 2023-12-22 11:27:20
     let dong_zhi2: SolarTerm = dong_zhi.next(24);
     assert_eq!("冬至", dong_zhi2.get_name());
     assert_eq!(0, dong_zhi2.get_index());
-    assert_eq!("2023年12月22日", dong_zhi2.get_julian_day().get_solar_day().to_string());
+    assert_eq!(
+      "2023年12月22日",
+      dong_zhi2.get_julian_day().get_solar_day().to_string()
+    );
     assert_eq!("2023年12月22日", dong_zhi2.get_solar_day().to_string());
   }
 
@@ -2140,17 +2411,29 @@ mod tests {
     // 索引
     assert_eq!(23, jq.get_index());
     // 公历
-    assert_eq!("2023年12月7日", jq.get_julian_day().get_solar_day().to_string());
+    assert_eq!(
+      "2023年12月7日",
+      jq.get_julian_day().get_solar_day().to_string()
+    );
     assert_eq!("2023年12月7日", jq.get_solar_day().to_string());
     // 农历
-    assert_eq!("农历癸卯年十月廿五", jq.get_julian_day().get_solar_day().get_lunar_day().to_string());
+    assert_eq!(
+      "农历癸卯年十月廿五",
+      jq.get_julian_day()
+        .get_solar_day()
+        .get_lunar_day()
+        .to_string()
+    );
     // 推移
     assert_eq!("雨水", jq.next(5).get_name());
   }
 
   #[test]
   fn test39() {
-    assert_eq!("寒露", SolarDay::from_ymd(2023, 10, 10).get_term().get_name());
+    assert_eq!(
+      "寒露",
+      SolarDay::from_ymd(2023, 10, 10).get_term().get_name()
+    );
   }
 
   #[test]
@@ -2364,14 +2647,31 @@ mod tests {
   #[test]
   fn test72() {
     // 大雪当天
-    assert_eq!("大雪第1天", SolarDay::from_ymd(2023, 12, 7).get_term_day().to_string());
+    assert_eq!(
+      "大雪第1天",
+      SolarDay::from_ymd(2023, 12, 7).get_term_day().to_string()
+    );
     // 天数索引
-    assert_eq!(0, SolarDay::from_ymd(2023, 12, 7).get_term_day().get_day_index());
+    assert_eq!(
+      0,
+      SolarDay::from_ymd(2023, 12, 7)
+        .get_term_day()
+        .get_day_index()
+    );
 
-    assert_eq!("大雪第2天", SolarDay::from_ymd(2023, 12, 8).get_term_day().to_string());
-    assert_eq!("大雪第15天", SolarDay::from_ymd(2023, 12, 21).get_term_day().to_string());
+    assert_eq!(
+      "大雪第2天",
+      SolarDay::from_ymd(2023, 12, 8).get_term_day().to_string()
+    );
+    assert_eq!(
+      "大雪第15天",
+      SolarDay::from_ymd(2023, 12, 21).get_term_day().to_string()
+    );
 
-    assert_eq!("冬至第1天", SolarDay::from_ymd(2023, 12, 22).get_term_day().to_string());
+    assert_eq!(
+      "冬至第1天",
+      SolarDay::from_ymd(2023, 12, 22).get_term_day().to_string()
+    );
   }
 
   #[test]
@@ -2380,7 +2680,13 @@ mod tests {
     assert_eq!("本气", d.get_hide_heaven_stem().get_type().get_name());
     assert_eq!("壬", d.get_hide_heaven_stem().get_name());
     assert_eq!("壬", d.get_hide_heaven_stem().to_string());
-    assert_eq!("水", d.get_hide_heaven_stem().get_heaven_stem().get_element().get_name());
+    assert_eq!(
+      "水",
+      d.get_hide_heaven_stem()
+        .get_heaven_stem()
+        .get_element()
+        .get_name()
+    );
     assert_eq!("壬水", d.get_name());
     assert_eq!(15, d.get_day_index());
     assert_eq!("壬水第16天", d.to_string());
@@ -2388,8 +2694,25 @@ mod tests {
 
   #[test]
   fn test74() {
-    assert_eq!("1034年10月1日", SolarTerm::from_name(1034, "寒露").get_solar_day().to_string());
-    assert_eq!("1034年10月3日", SolarTerm::from_name(1034, "寒露").get_julian_day().get_solar_day().to_string());
-    assert_eq!("1034年10月3日 06:02:28", SolarTerm::from_name(1034, "寒露").get_julian_day().get_solar_time().to_string());
+    assert_eq!(
+      "1034年10月1日",
+      SolarTerm::from_name(1034, "寒露")
+        .get_solar_day()
+        .to_string()
+    );
+    assert_eq!(
+      "1034年10月3日",
+      SolarTerm::from_name(1034, "寒露")
+        .get_julian_day()
+        .get_solar_day()
+        .to_string()
+    );
+    assert_eq!(
+      "1034年10月3日 06:02:28",
+      SolarTerm::from_name(1034, "寒露")
+        .get_julian_day()
+        .get_solar_time()
+        .to_string()
+    );
   }
 }

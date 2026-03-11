@@ -16,7 +16,12 @@ pub trait EightCharProvider {
 
 /// 默认的八字计算（晚子时算第二天）
 #[derive(Debug, Copy, Clone)]
-pub struct DefaultEightCharProvider {
+pub struct DefaultEightCharProvider {}
+
+impl Default for DefaultEightCharProvider {
+  fn default() -> Self {
+    Self::new()
+  }
 }
 
 impl DefaultEightCharProvider {
@@ -33,7 +38,12 @@ impl EightCharProvider for DefaultEightCharProvider {
 
 /// Lunar流派2的八字计算（晚子时日柱算当天）
 #[derive(Debug, Copy, Clone)]
-pub struct LunarSect2EightCharProvider {
+pub struct LunarSect2EightCharProvider {}
+
+impl Default for LunarSect2EightCharProvider {
+  fn default() -> Self {
+    Self::new()
+  }
 }
 
 impl LunarSect2EightCharProvider {
@@ -45,7 +55,12 @@ impl LunarSect2EightCharProvider {
 impl EightCharProvider for LunarSect2EightCharProvider {
   fn get_eight_char(&self, hour: LunarHour) -> EightChar {
     let h: SixtyCycleHour = hour.get_sixty_cycle_hour();
-    EightChar::from_sixty_cycle(h.get_year(), h.get_month(), hour.get_lunar_day().get_sixty_cycle(), h.get_sixty_cycle())
+    EightChar::from_sixty_cycle(
+      h.get_year(),
+      h.get_month(),
+      hour.get_lunar_day().get_sixty_cycle(),
+      h.get_sixty_cycle(),
+    )
   }
 }
 
@@ -58,12 +73,27 @@ impl ChildLimitProvider for AbstractChildLimitProvider {
   }
 }
 
+impl Default for AbstractChildLimitProvider {
+  fn default() -> Self {
+    Self::new()
+  }
+}
+
 impl AbstractChildLimitProvider {
   pub fn new() -> Self {
     Self {}
   }
 
-  fn next(&self, birth_time: SolarTime, add_year: usize, add_month: usize, add_day: usize, add_hour: usize, add_minute: usize, add_second: usize) -> ChildLimitInfo {
+  fn next(
+    &self,
+    birth_time: SolarTime,
+    add_year: usize,
+    add_month: usize,
+    add_day: usize,
+    add_hour: usize,
+    add_minute: usize,
+    add_second: usize,
+  ) -> ChildLimitInfo {
     let mut d: usize = birth_time.get_day() + add_day;
     let mut h: usize = birth_time.get_hour() + add_hour;
     let mut mi: usize = birth_time.get_minute() + add_minute;
@@ -75,7 +105,11 @@ impl AbstractChildLimitProvider {
     d += h / 24;
     h %= 24;
 
-    let mut sm: SolarMonth = SolarMonth::from_ym(birth_time.get_year() + add_year as isize, birth_time.get_month()).next(add_month as isize);
+    let mut sm: SolarMonth = SolarMonth::from_ym(
+      birth_time.get_year() + add_year as isize,
+      birth_time.get_month(),
+    )
+    .next(add_month as isize);
 
     let mut dc: usize = sm.get_day_count();
     while d > dc {
@@ -99,13 +133,19 @@ impl AbstractChildLimitProvider {
 /// 默认的童限计算
 #[derive(Debug, Copy, Clone)]
 pub struct DefaultChildLimitProvider {
-  parent: AbstractChildLimitProvider
+  parent: AbstractChildLimitProvider,
+}
+
+impl Default for DefaultChildLimitProvider {
+  fn default() -> Self {
+    Self::new()
+  }
 }
 
 impl DefaultChildLimitProvider {
   pub fn new() -> Self {
     Self {
-      parent: AbstractChildLimitProvider::new()
+      parent: AbstractChildLimitProvider::new(),
     }
   }
 }
@@ -113,7 +153,11 @@ impl DefaultChildLimitProvider {
 impl ChildLimitProvider for DefaultChildLimitProvider {
   fn get_info(&self, birth_time: SolarTime, term: SolarTerm) -> ChildLimitInfo {
     // 出生时刻和节令时刻相差的秒数
-    let mut seconds: usize = term.get_julian_day().get_solar_time().subtract(birth_time).abs() as usize;
+    let mut seconds: usize = term
+      .get_julian_day()
+      .get_solar_time()
+      .subtract(birth_time)
+      .unsigned_abs();
     // 3天 = 1年，3天=60*60*24*3秒=259200秒 = 1年
     let year: usize = seconds / 259200;
     seconds %= 259200;
@@ -129,20 +173,28 @@ impl ChildLimitProvider for DefaultChildLimitProvider {
     // 1秒 = 2分，1秒/2=0.5秒 = 1分
     let minute: usize = seconds * 2;
 
-    self.parent.next(birth_time, year, month, day, hour, minute, 0)
+    self
+      .parent
+      .next(birth_time, year, month, day, hour, minute, 0)
   }
 }
 
 /// 元亨利贞的童限计算
 #[derive(Debug, Copy, Clone)]
 pub struct China95ChildLimitProvider {
-  parent: AbstractChildLimitProvider
+  parent: AbstractChildLimitProvider,
+}
+
+impl Default for China95ChildLimitProvider {
+  fn default() -> Self {
+    Self::new()
+  }
 }
 
 impl China95ChildLimitProvider {
   pub fn new() -> Self {
     Self {
-      parent: AbstractChildLimitProvider::new()
+      parent: AbstractChildLimitProvider::new(),
     }
   }
 }
@@ -150,7 +202,12 @@ impl China95ChildLimitProvider {
 impl ChildLimitProvider for China95ChildLimitProvider {
   fn get_info(&self, birth_time: SolarTime, term: SolarTerm) -> ChildLimitInfo {
     // 出生时刻和节令时刻相差的分钟数
-    let mut minutes: usize = term.get_julian_day().get_solar_time().subtract(birth_time).abs() as usize / 60;
+    let mut minutes: usize = term
+      .get_julian_day()
+      .get_solar_time()
+      .subtract(birth_time)
+      .unsigned_abs()
+      / 60;
     let year: usize = minutes / 4320;
     minutes %= 4320;
     let month: usize = minutes / 360;
@@ -164,13 +221,19 @@ impl ChildLimitProvider for China95ChildLimitProvider {
 /// Lunar的流派1童限计算（按天数和时辰数计算，3天1年，1天4个月，1时辰10天）
 #[derive(Debug, Copy, Clone)]
 pub struct LunarSect1ChildLimitProvider {
-  parent: AbstractChildLimitProvider
+  parent: AbstractChildLimitProvider,
+}
+
+impl Default for LunarSect1ChildLimitProvider {
+  fn default() -> Self {
+    Self::new()
+  }
 }
 
 impl LunarSect1ChildLimitProvider {
   pub fn new() -> Self {
     Self {
-      parent: AbstractChildLimitProvider::new()
+      parent: AbstractChildLimitProvider::new(),
     }
   }
 }
@@ -184,8 +247,16 @@ impl ChildLimitProvider for LunarSect1ChildLimitProvider {
       end = birth_time;
       start = term_time;
     }
-    let end_time_zhi_index: usize = if end.get_hour() == 23 {11} else {end.get_lunar_hour().get_index_in_day()};
-    let start_time_zhi_index: usize = if start.get_hour() == 23 {11} else {start.get_lunar_hour().get_index_in_day()};
+    let end_time_zhi_index: usize = if end.get_hour() == 23 {
+      11
+    } else {
+      end.get_lunar_hour().get_index_in_day()
+    };
+    let start_time_zhi_index: usize = if start.get_hour() == 23 {
+      11
+    } else {
+      start.get_lunar_hour().get_index_in_day()
+    };
     // 时辰差
     let mut hour_diff: isize = end_time_zhi_index as isize - start_time_zhi_index as isize;
     // 天数差
@@ -198,22 +269,36 @@ impl ChildLimitProvider for LunarSect1ChildLimitProvider {
     let mut month: isize = day_diff * 4 + month_diff;
     let day: isize = hour_diff * 10 - month_diff * 30;
     let year: isize = month / 12;
-    month = month - year * 12;
+    month -= year * 12;
 
-    self.parent.next(birth_time, year as usize, month as usize, day as usize, 0, 0, 0)
+    self.parent.next(
+      birth_time,
+      year as usize,
+      month as usize,
+      day as usize,
+      0,
+      0,
+      0,
+    )
   }
 }
 
 /// Lunar的流派2童限计算（按分钟数计算）
 #[derive(Debug, Copy, Clone)]
 pub struct LunarSect2ChildLimitProvider {
-  parent: AbstractChildLimitProvider
+  parent: AbstractChildLimitProvider,
+}
+
+impl Default for LunarSect2ChildLimitProvider {
+  fn default() -> Self {
+    Self::new()
+  }
 }
 
 impl LunarSect2ChildLimitProvider {
   pub fn new() -> Self {
     Self {
-      parent: AbstractChildLimitProvider::new()
+      parent: AbstractChildLimitProvider::new(),
     }
   }
 }
@@ -221,7 +306,12 @@ impl LunarSect2ChildLimitProvider {
 impl ChildLimitProvider for LunarSect2ChildLimitProvider {
   fn get_info(&self, birth_time: SolarTime, term: SolarTerm) -> ChildLimitInfo {
     // 出生时刻和节令时刻相差的分钟数
-    let mut minutes: usize = term.get_julian_day().get_solar_time().subtract(birth_time).abs() as usize / 60;
+    let mut minutes: usize = term
+      .get_julian_day()
+      .get_solar_time()
+      .subtract(birth_time)
+      .unsigned_abs()
+      / 60;
     let year: usize = minutes / 4320;
     minutes %= 4320;
     let month: usize = minutes / 360;

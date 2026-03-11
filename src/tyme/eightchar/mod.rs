@@ -1,15 +1,17 @@
-use std::fmt::{Display, Formatter};
-use std::sync::{Arc, Mutex};
+use core::fmt::{Display, Formatter};
 
-use lazy_static::lazy_static;
+use alloc::string::String;
+use alloc::vec::Vec;
+use alloc::{format, vec};
+use libm::ceil;
 
-use crate::tyme::{Culture, Tyme};
 use crate::tyme::culture::Duty;
 use crate::tyme::eightchar::provider::{ChildLimitProvider, DefaultChildLimitProvider};
 use crate::tyme::enums::{Gender, YinYang};
 use crate::tyme::lunar::LunarYear;
 use crate::tyme::sixtycycle::{EarthBranch, HeavenStem, SixtyCycle, SixtyCycleYear, ThreePillars};
 use crate::tyme::solar::{SolarDay, SolarTerm, SolarTime};
+use crate::tyme::{Culture, Tyme};
 
 pub mod provider;
 
@@ -34,7 +36,12 @@ impl EightChar {
     }
   }
 
-  pub fn from_sixty_cycle(year: SixtyCycle, month: SixtyCycle, day: SixtyCycle, hour: SixtyCycle) -> Self {
+  pub fn from_sixty_cycle(
+    year: SixtyCycle,
+    month: SixtyCycle,
+    day: SixtyCycle,
+    hour: SixtyCycle,
+  ) -> Self {
     Self {
       three_pillars: ThreePillars::from_sixty_cycle(year, month, day),
       hour,
@@ -59,12 +66,26 @@ impl EightChar {
 
   pub fn get_fetal_origin(&self) -> SixtyCycle {
     let m: SixtyCycle = self.get_month();
-    SixtyCycle::from_name(format!("{}{}", m.get_heaven_stem().next(1).get_name(), m.get_earth_branch().next(3).get_name()).as_str())
+    SixtyCycle::from_name(
+      format!(
+        "{}{}",
+        m.get_heaven_stem().next(1).get_name(),
+        m.get_earth_branch().next(3).get_name()
+      )
+      .as_str(),
+    )
   }
 
   pub fn get_fetal_breath(&self) -> SixtyCycle {
     let d: SixtyCycle = self.get_day();
-    SixtyCycle::from_name(format!("{}{}", d.get_heaven_stem().next(5).get_name(), EarthBranch::from_index(13 - (d.get_earth_branch().get_index() as isize)).get_name()).as_str())
+    SixtyCycle::from_name(
+      format!(
+        "{}{}",
+        d.get_heaven_stem().next(5).get_name(),
+        EarthBranch::from_index(13 - (d.get_earth_branch().get_index() as isize)).get_name()
+      )
+      .as_str(),
+    )
   }
 
   pub fn get_own_sign(&self) -> SixtyCycle {
@@ -78,7 +99,17 @@ impl EightChar {
     }
     let mut offset: isize = m + h;
     offset = if offset >= 14 { 26 } else { 14 } - offset;
-    SixtyCycle::from_name(format!("{}{}", HeavenStem::from_index(((self.get_year().get_heaven_stem().get_index() as isize) + 1) * 2 + offset - 1).get_name(), EarthBranch::from_index(offset + 1).get_name()).as_str())
+    SixtyCycle::from_name(
+      format!(
+        "{}{}",
+        HeavenStem::from_index(
+          ((self.get_year().get_heaven_stem().get_index() as isize) + 1) * 2 + offset - 1
+        )
+        .get_name(),
+        EarthBranch::from_index(offset + 1).get_name()
+      )
+      .as_str(),
+    )
   }
 
   pub fn get_body_sign(&self) -> SixtyCycle {
@@ -90,12 +121,25 @@ impl EightChar {
     if offset > 12 {
       offset -= 12;
     }
-    SixtyCycle::from_name(format!("{}{}", HeavenStem::from_index(((self.get_year().get_heaven_stem().get_index() as isize) + 1) * 2 + offset - 1).get_name(), EarthBranch::from_index(offset + 1).get_name()).as_str())
+    SixtyCycle::from_name(
+      format!(
+        "{}{}",
+        HeavenStem::from_index(
+          ((self.get_year().get_heaven_stem().get_index() as isize) + 1) * 2 + offset - 1
+        )
+        .get_name(),
+        EarthBranch::from_index(offset + 1).get_name()
+      )
+      .as_str(),
+    )
   }
 
   #[deprecated(since = "1.3.0", note = "please use SixtyCycleDay.get_duty() instead")]
   pub fn get_duty(&self) -> Duty {
-    Duty::from_index((self.get_day().get_earth_branch().get_index() as isize) - (self.get_month().get_earth_branch().get_index() as isize))
+    Duty::from_index(
+      (self.get_day().get_earth_branch().get_index() as isize)
+        - (self.get_month().get_earth_branch().get_index() as isize),
+    )
   }
 
   pub fn get_solar_times(&self, start_year: isize, end_year: isize) -> Vec<SolarTime> {
@@ -106,7 +150,9 @@ impl EightChar {
     // 月地支距寅月的偏移值
     let mut m: isize = month.get_earth_branch().next(-2).get_index() as isize;
     // 月天干要一致
-    if HeavenStem::from_index((year.get_heaven_stem().get_index() as isize + 1) * 2 + m) != month.get_heaven_stem() {
+    if HeavenStem::from_index((year.get_heaven_stem().get_index() as isize + 1) * 2 + m)
+      != month.get_heaven_stem()
+    {
       return l;
     }
     // 1年的立春是辛酉，序号57
@@ -122,7 +168,7 @@ impl EightChar {
     }
     let base_year: isize = start_year - 1;
     if base_year > y {
-      y += 60 * ((base_year - y) as f64 / 60.0).ceil() as isize;
+      y += 60 * ceil((base_year - y) as f64 / 60.0) as isize;
     }
     while y <= end_year {
       // 立春为寅月的开始
@@ -135,7 +181,9 @@ impl EightChar {
       if solar_time.get_year() >= start_year {
         // 日干支和节令干支的偏移值
         let mut solar_day: SolarDay = solar_time.get_solar_day();
-        let d: isize = day.next(-(solar_day.get_lunar_day().get_sixty_cycle().get_index() as isize)).get_index() as isize;
+        let d: isize = day
+          .next(-(solar_day.get_lunar_day().get_sixty_cycle().get_index() as isize))
+          .get_index() as isize;
         if d > 0 {
           // 从节令推移天数
           solar_day = solar_day.next(d);
@@ -148,7 +196,14 @@ impl EightChar {
             mi = solar_time.get_minute();
             s = solar_time.get_second();
           }
-          let mut time: SolarTime = SolarTime::from_ymd_hms(solar_day.get_year(), solar_day.get_month(), solar_day.get_day(), hour, mi, s);
+          let mut time: SolarTime = SolarTime::from_ymd_hms(
+            solar_day.get_year(),
+            solar_day.get_month(),
+            solar_day.get_day(),
+            hour,
+            mi,
+            s,
+          );
           if d == 30 {
             time = time.next(-3600);
           }
@@ -165,7 +220,7 @@ impl EightChar {
 }
 
 impl Display for EightChar {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+  fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
     write!(f, "{}", self.get_name())
   }
 }
@@ -191,7 +246,15 @@ pub struct ChildLimitInfo {
 }
 
 impl ChildLimitInfo {
-  pub fn new(start_time: SolarTime, end_time: SolarTime, year_count: usize, month_count: usize, day_count: usize, hour_count: usize, minute_count: usize) -> Self {
+  pub fn new(
+    start_time: SolarTime,
+    end_time: SolarTime,
+    year_count: usize,
+    month_count: usize,
+    day_count: usize,
+    hour_count: usize,
+    minute_count: usize,
+  ) -> Self {
     Self {
       start_time,
       end_time,
@@ -234,15 +297,17 @@ impl ChildLimitInfo {
 
 impl PartialEq for ChildLimitInfo {
   fn eq(&self, other: &Self) -> bool {
-    self.get_start_time() == other.get_start_time() && self.get_end_time() == other.get_end_time() && self.get_year_count() == other.get_year_count() && self.get_month_count() == other.get_month_count() && self.get_day_count() == other.get_day_count() && self.get_hour_count() == other.get_hour_count() && self.get_minute_count() == other.get_minute_count()
+    self.get_start_time() == other.get_start_time()
+      && self.get_end_time() == other.get_end_time()
+      && self.get_year_count() == other.get_year_count()
+      && self.get_month_count() == other.get_month_count()
+      && self.get_day_count() == other.get_day_count()
+      && self.get_hour_count() == other.get_hour_count()
+      && self.get_minute_count() == other.get_minute_count()
   }
 }
 
 impl Eq for ChildLimitInfo {}
-
-lazy_static! {
-  static ref CHILD_LIMIT_PROVIDER: Arc<Mutex<Box<dyn ChildLimitProvider + Sync + Send + 'static>>> = Arc::new(Mutex::new(Box::new(DefaultChildLimitProvider::new())));
-}
 
 /// 童限（从出生到起运的时间段）
 #[derive(Debug, Clone)]
@@ -267,7 +332,7 @@ impl ChildLimit {
     if forward {
       term = term.next(2);
     }
-    let info: ChildLimitInfo = CHILD_LIMIT_PROVIDER.lock().unwrap().get_info(birth_time, term);
+    let info: ChildLimitInfo = DefaultChildLimitProvider::new().get_info(birth_time, term);
 
     Self {
       eight_char,
@@ -331,9 +396,15 @@ impl ChildLimit {
     Fortune::from_child_limit(self.clone(), 0)
   }
 
-  #[deprecated(since = "1.3.0", note = "please use get_end_sixty_cycle_year() instead")]
+  #[deprecated(
+    since = "1.3.0",
+    note = "please use get_end_sixty_cycle_year() instead"
+  )]
   pub fn get_end_lunar_year(&self) -> LunarYear {
-    LunarYear::from_year(self.get_start_time().get_lunar_hour().get_year() + self.get_end_time().get_year() - self.get_start_time().get_year())
+    LunarYear::from_year(
+      self.get_start_time().get_lunar_hour().get_year() + self.get_end_time().get_year()
+        - self.get_start_time().get_year(),
+    )
   }
 
   /// 开始(即出生)干支年
@@ -353,7 +424,8 @@ impl ChildLimit {
 
   /// 结束年龄
   pub fn get_end_age(&self) -> usize {
-    let n: isize = self.get_end_sixty_cycle_year().get_year() - self.get_start_sixty_cycle_year().get_year();
+    let n: isize =
+      self.get_end_sixty_cycle_year().get_year() - self.get_start_sixty_cycle_year().get_year();
     if n > 1 {
       return n as usize;
     }
@@ -390,10 +462,7 @@ impl Tyme for DecadeFortune {
 
 impl DecadeFortune {
   pub fn new(child_limit: ChildLimit, index: isize) -> Self {
-    Self {
-      child_limit,
-      index,
-    }
+    Self { child_limit, index }
   }
 
   pub fn from_child_limit(child_limit: ChildLimit, index: isize) -> Self {
@@ -409,26 +478,56 @@ impl DecadeFortune {
   }
 
   pub fn get_start_age(&self) -> isize {
-    self.child_limit.get_end_sixty_cycle_year().get_year() - self.child_limit.get_start_sixty_cycle_year().get_year() + 1 + self.index * 10
+    self.child_limit.get_end_sixty_cycle_year().get_year()
+      - self.child_limit.get_start_sixty_cycle_year().get_year()
+      + 1
+      + self.index * 10
   }
 
   pub fn get_end_age(&self) -> isize {
     self.get_start_age() + 9
   }
 
-  #[deprecated(since = "1.3.0", note = "please use get_start_sixty_cycle_year() instead")]
+  #[deprecated(
+    since = "1.3.0",
+    note = "please use get_start_sixty_cycle_year() instead"
+  )]
   pub fn get_start_lunar_year(&self) -> LunarYear {
-    LunarYear::from_year(self.child_limit.get_start_time().get_lunar_hour().get_year() + self.child_limit.get_end_time().get_year() - self.child_limit.get_start_time().get_year()).next(self.index * 10)
+    LunarYear::from_year(
+      self
+        .child_limit
+        .get_start_time()
+        .get_lunar_hour()
+        .get_year()
+        + self.child_limit.get_end_time().get_year()
+        - self.child_limit.get_start_time().get_year(),
+    )
+    .next(self.index * 10)
   }
 
   /// 开始干支年
   pub fn get_start_sixty_cycle_year(&self) -> SixtyCycleYear {
-    self.child_limit.get_end_sixty_cycle_year().next(self.index * 10)
+    self
+      .child_limit
+      .get_end_sixty_cycle_year()
+      .next(self.index * 10)
   }
 
-  #[deprecated(since = "1.3.0", note = "please use get_end_sixty_cycle_year() instead")]
+  #[deprecated(
+    since = "1.3.0",
+    note = "please use get_end_sixty_cycle_year() instead"
+  )]
   pub fn get_end_lunar_year(&self) -> LunarYear {
-    LunarYear::from_year(self.child_limit.get_start_time().get_lunar_hour().get_year() + self.child_limit.get_end_time().get_year() - self.child_limit.get_start_time().get_year()).next(self.index * 10 + 9)
+    LunarYear::from_year(
+      self
+        .child_limit
+        .get_start_time()
+        .get_lunar_hour()
+        .get_year()
+        + self.child_limit.get_end_time().get_year()
+        - self.child_limit.get_start_time().get_year(),
+    )
+    .next(self.index * 10 + 9)
   }
 
   /// 结束干支年
@@ -438,7 +537,11 @@ impl DecadeFortune {
 
   pub fn get_sixty_cycle(&self) -> SixtyCycle {
     let n: isize = self.index + 1;
-    self.child_limit.get_eight_char().get_month().next(if self.child_limit.is_forward() { n } else { -n })
+    self
+      .child_limit
+      .get_eight_char()
+      .get_month()
+      .next(if self.child_limit.is_forward() { n } else { -n })
   }
 
   pub fn get_start_fortune(&self) -> Fortune {
@@ -475,10 +578,7 @@ impl Tyme for Fortune {
 
 impl Fortune {
   pub fn new(child_limit: ChildLimit, index: isize) -> Self {
-    Self {
-      child_limit,
-      index,
-    }
+    Self { child_limit, index }
   }
 
   pub fn from_child_limit(child_limit: ChildLimit, index: isize) -> Self {
@@ -494,12 +594,24 @@ impl Fortune {
   }
 
   pub fn get_age(&self) -> isize {
-    self.child_limit.get_end_sixty_cycle_year().get_year() - self.child_limit.get_start_sixty_cycle_year().get_year() + 1 + self.index
+    self.child_limit.get_end_sixty_cycle_year().get_year()
+      - self.child_limit.get_start_sixty_cycle_year().get_year()
+      + 1
+      + self.index
   }
 
   #[deprecated(since = "1.3.0", note = "please use get_sixty_cycle_year() instead")]
   pub fn get_lunar_year(&self) -> LunarYear {
-    LunarYear::from_year(self.child_limit.get_start_time().get_lunar_hour().get_year() + self.child_limit.get_end_time().get_year() - self.child_limit.get_start_time().get_year()).next(self.index)
+    LunarYear::from_year(
+      self
+        .child_limit
+        .get_start_time()
+        .get_lunar_hour()
+        .get_year()
+        + self.child_limit.get_end_time().get_year()
+        - self.child_limit.get_start_time().get_year(),
+    )
+    .next(self.index)
   }
 
   /// 干支年
@@ -509,7 +621,11 @@ impl Fortune {
 
   pub fn get_sixty_cycle(&self) -> SixtyCycle {
     let n: isize = self.get_age();
-    self.child_limit.get_eight_char().get_hour().next(if self.child_limit.is_forward() { n } else { -n })
+    self
+      .child_limit
+      .get_eight_char()
+      .get_hour()
+      .next(if self.child_limit.is_forward() { n } else { -n })
   }
 }
 
@@ -523,26 +639,18 @@ impl Eq for Fortune {}
 
 #[cfg(test)]
 mod tests {
-  use std::sync::MutexGuard;
-  use crate::tyme::eightchar::{CHILD_LIMIT_PROVIDER, ChildLimit};
-  use crate::tyme::eightchar::provider::{ChildLimitProvider, DefaultChildLimitProvider};
-  use crate::tyme::enums::Gender;
+  use alloc::string::ToString;
+
   use crate::tyme::solar::SolarTime;
 
   #[test]
-  fn test0() {
-    // 动态切换童限实现
-    {
-      let mut provider: MutexGuard<Box<dyn ChildLimitProvider + Sync + Send + 'static>> = CHILD_LIMIT_PROVIDER.lock().unwrap();
-      *provider = Box::new(DefaultChildLimitProvider::new());
-    }
-
-    let d: ChildLimit = ChildLimit::from_solar_time(SolarTime::from_ymd_hms(1989, 12, 31, 23, 7, 17), Gender::MAN);
-    assert_eq!("1998年3月1日 19:47:17", d.get_end_time().to_string());
-  }
-
-  #[test]
   fn test1() {
-    assert_eq!("甲戌 癸酉 甲戌 甲戌", SolarTime::from_ymd_hms(1034, 10, 2, 20, 0, 0).get_lunar_hour().get_eight_char().to_string());
+    assert_eq!(
+      "甲戌 癸酉 甲戌 甲戌",
+      SolarTime::from_ymd_hms(1034, 10, 2, 20, 0, 0)
+        .get_lunar_hour()
+        .get_eight_char()
+        .to_string()
+    );
   }
 }

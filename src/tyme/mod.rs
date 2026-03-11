@@ -1,4 +1,8 @@
-use std::fmt::{Display, Formatter};
+use core::fmt::{Display, Formatter};
+
+use alloc::format;
+use alloc::string::{String, ToString};
+use alloc::vec::Vec;
 
 /// 传统文化(民俗)
 pub trait Culture {
@@ -21,6 +25,12 @@ impl Culture for AbstractCulture {
   }
 }
 
+impl Default for AbstractCulture {
+  fn default() -> Self {
+    Self::new()
+  }
+}
+
 impl AbstractCulture {
   pub fn new() -> Self {
     Self {}
@@ -37,7 +47,7 @@ impl AbstractCulture {
 }
 
 impl Display for AbstractCulture {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+  fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
     write!(f, "{}", self.get_name())
   }
 }
@@ -64,10 +74,7 @@ impl Culture for AbstractCultureDay {
 
 impl AbstractCultureDay {
   pub fn new(culture: AbstractCulture, day_index: usize) -> Self {
-    Self {
-      culture,
-      day_index,
-    }
+    Self { culture, day_index }
   }
 
   pub fn get_day_index(&self) -> usize {
@@ -80,7 +87,7 @@ impl AbstractCultureDay {
 }
 
 impl Display for AbstractCultureDay {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+  fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
     write!(f, "{}第{}天", self.get_name(), self.day_index + 1)
   }
 }
@@ -98,16 +105,22 @@ pub struct AbstractTyme {
   parent: AbstractCulture,
 }
 
+impl Default for AbstractTyme {
+  fn default() -> Self {
+    Self::new()
+  }
+}
+
 impl AbstractTyme {
   pub fn new() -> Self {
     Self {
-      parent: AbstractCulture::new()
+      parent: AbstractCulture::new(),
     }
   }
 }
 
 impl Display for AbstractTyme {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+  fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
     write!(f, "{}", self.parent.get_name())
   }
 }
@@ -120,9 +133,9 @@ impl PartialEq for AbstractTyme {
 
 impl Eq for AbstractTyme {}
 
-impl Into<AbstractCulture> for AbstractTyme {
-  fn into(self) -> AbstractCulture {
-    self.parent
+impl From<AbstractTyme> for AbstractCulture {
+  fn from(val: AbstractTyme) -> Self {
+    val.parent
   }
 }
 
@@ -149,22 +162,18 @@ impl LoopTyme {
   pub fn new(names: Vec<String>, name: &str) -> Result<Self, String> {
     let mut real_index: Option<usize> = None;
     for i in 0..names.len() {
-      if names[i].to_string() == name {
+      if names[i] == name {
         real_index = Some(i);
         break;
       }
     }
     match real_index {
-      None => {
-        Err(format!("illegal name: {}", name))
-      }
-      Some(n) => {
-        Ok(Self {
-          parent: AbstractTyme::new(),
-          names,
-          index: n,
-        })
-      }
+      None => Err(format!("illegal name: {}", name)),
+      Some(n) => Ok(Self {
+        parent: AbstractTyme::new(),
+        names,
+        index: n,
+      }),
     }
   }
 
@@ -206,7 +215,7 @@ impl LoopTyme {
 }
 
 impl Display for LoopTyme {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+  fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
     write!(f, "{}", self.get_name())
   }
 }
@@ -219,20 +228,20 @@ impl PartialEq for LoopTyme {
 
 impl Eq for LoopTyme {}
 
-impl Into<AbstractTyme> for LoopTyme {
-  fn into(self) -> AbstractTyme {
-    self.parent
+impl From<LoopTyme> for AbstractTyme {
+  fn from(val: LoopTyme) -> Self {
+    val.parent
   }
 }
 
-pub mod enums;
 pub mod culture;
+pub mod eightchar;
+pub mod enums;
+pub mod festival;
+pub mod holiday;
 pub mod jd;
-pub mod sixtycycle;
 pub mod lunar;
+pub mod rabbyung;
+pub mod sixtycycle;
 pub mod solar;
 pub mod util;
-pub mod holiday;
-pub mod festival;
-pub mod eightchar;
-pub mod rabbyung;

@@ -1,8 +1,11 @@
-use std::fmt::{Display, Formatter};
+use alloc::string::{String, ToString};
+use core::fmt::{Display, Formatter};
 
 use crate::tyme::{Culture, LoopTyme, Tyme};
 
-pub static TEN_STAR_NAMES: [&str; 10] = ["比肩", "劫财", "食神", "伤官", "偏财", "正财", "七杀", "正官", "偏印", "正印"];
+pub static TEN_STAR_NAMES: [&str; 10] = [
+  "比肩", "劫财", "食神", "伤官", "偏财", "正财", "七杀", "正官", "偏印", "正印",
+];
 
 /// 十神
 #[derive(Debug, Clone)]
@@ -25,13 +28,27 @@ impl Culture for TenStar {
 impl TenStar {
   pub fn from_index(index: isize) -> Self {
     Self {
-      parent: LoopTyme::from_index(TEN_STAR_NAMES.to_vec().iter().map(|x| x.to_string()).collect(), index)
+      parent: LoopTyme::from_index(
+        TEN_STAR_NAMES
+          .to_vec()
+          .iter()
+          .map(|x| x.to_string())
+          .collect(),
+        index,
+      ),
     }
   }
 
   pub fn from_name(name: &str) -> Self {
     Self {
-      parent: LoopTyme::from_name(TEN_STAR_NAMES.to_vec().iter().map(|x| x.to_string()).collect(), name)
+      parent: LoopTyme::from_name(
+        TEN_STAR_NAMES
+          .to_vec()
+          .iter()
+          .map(|x| x.to_string())
+          .collect(),
+        name,
+      ),
     }
   }
 
@@ -45,7 +62,7 @@ impl TenStar {
 }
 
 impl Display for TenStar {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+  fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
     write!(f, "{}", self.get_name())
   }
 }
@@ -58,8 +75,8 @@ impl PartialEq for TenStar {
 
 impl Eq for TenStar {}
 
-impl Into<LoopTyme> for TenStar {
-  fn into(self) -> LoopTyme {
-    self.parent
+impl From<TenStar> for LoopTyme {
+  fn from(val: TenStar) -> Self {
+    val.parent
   }
 }

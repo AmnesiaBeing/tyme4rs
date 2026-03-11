@@ -11,6 +11,5 @@ license = "MIT"
 keywords = ["Solar", "Lunar", "SixtyCycle", "SolarTerm"]
 
 [dependencies]
-lazy_static = "1.5.0"
-regex = "1.11.1"
+libm = "0.2"
 atomic_refcell = "0.1.13"

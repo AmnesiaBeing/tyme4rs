@@ -1,9 +1,12 @@
-use std::fmt::{Display, Formatter};
+use core::fmt::{Display, Formatter};
 
-use crate::tyme::{AbstractCulture, AbstractCultureDay, AbstractTyme, Culture, LoopTyme, Tyme};
+use alloc::string::{String, ToString};
+
 use crate::tyme::jd::{JulianDay, J2000};
 use crate::tyme::util::{ShouXingUtil, PI64};
+use crate::tyme::{AbstractCulture, AbstractCultureDay, AbstractTyme, Culture, LoopTyme, Tyme};
 
+#[rustfmt::skip]
 pub static PHENOLOGY_NAMES: [&str; 72] = ["蚯蚓结", "麋角解", "水泉动", "雁北乡", "鹊始巢", "雉始雊", "鸡始乳", "征鸟厉疾", "水泽腹坚", "东风解冻", "蛰虫始振", "鱼陟负冰", "獭祭鱼", "候雁北", "草木萌动", "桃始华", "仓庚鸣", "鹰化为鸠", "玄鸟至", "雷乃发声", "始电", "桐始华", "田鼠化为鴽", "虹始见", "萍始生", "鸣鸠拂其羽", "戴胜降于桑", "蝼蝈鸣", "蚯蚓出", "王瓜生", "苦菜秀", "靡草死", "麦秋至", "螳螂生", "鵙始鸣", "反舌无声", "鹿角解", "蜩始鸣", "半夏生", "温风至", "蟋蟀居壁", "鹰始挚", "腐草为萤", "土润溽暑", "大雨行时", "凉风至", "白露降", "寒蝉鸣", "鹰乃祭鸟", "天地始肃", "禾乃登", "鸿雁来", "玄鸟归", "群鸟养羞", "雷始收声", "蛰虫坯户", "水始涸", "鸿雁来宾", "雀入大水为蛤", "菊有黄花", "豺乃祭兽", "草木黄落", "蛰虫咸俯", "水始冰", "地始冻", "雉入大水为蜃", "虹藏不见", "天气上升地气下降", "闭塞而成冬", "鹖鴠不鸣", "虎始交", "荔挺出"];
 
 /// 候
@@ -17,7 +20,10 @@ impl Tyme for Phenology {
   fn next(&self, n: isize) -> Self {
     let size: isize = self.get_size() as isize;
     let i: isize = self.get_index() as isize + n;
-    Self::from_index((self.get_year() * size + i) / size, self.parent.index_of_index(i) as isize)
+    Self::from_index(
+      (self.get_year() * size + i) / size,
+      self.parent.index_of_index(i) as isize,
+    )
   }
 }
 
@@ -32,14 +38,28 @@ impl Phenology {
     let size: isize = PHENOLOGY_NAMES.len() as isize;
     let year: isize = (year * size + index) / size;
     Self {
-      parent: LoopTyme::from_index(PHENOLOGY_NAMES.to_vec().iter().map(|x| x.to_string()).collect(), index),
+      parent: LoopTyme::from_index(
+        PHENOLOGY_NAMES
+          .to_vec()
+          .iter()
+          .map(|x| x.to_string())
+          .collect(),
+        index,
+      ),
       year,
     }
   }
 
   pub fn from_name(year: isize, name: &str) -> Self {
     Self {
-      parent: LoopTyme::from_name(PHENOLOGY_NAMES.to_vec().iter().map(|x| x.to_string()).collect(), name),
+      parent: LoopTyme::from_name(
+        PHENOLOGY_NAMES
+          .to_vec()
+          .iter()
+          .map(|x| x.to_string())
+          .collect(),
+        name,
+      ),
       year,
     }
   }
@@ -55,20 +75,24 @@ impl Phenology {
   pub fn get_year(&self) -> isize {
     self.year
   }
-  
+
   pub fn get_three_phenology(&self) -> ThreePhenology {
     ThreePhenology::from_index((self.get_index() as isize) % 3)
   }
 
   /// 儒略日
   pub fn get_julian_day(&self) -> JulianDay {
-    let t: f64 = ShouXingUtil::sa_lon_t((self.get_year() as f64 - 2000f64 + (self.get_index() as f64 - 18f64) * 5.0 / 360f64 + 1f64) * 2f64 * PI64);
+    let t: f64 = ShouXingUtil::sa_lon_t(
+      (self.get_year() as f64 - 2000f64 + (self.get_index() as f64 - 18f64) * 5.0 / 360f64 + 1f64)
+        * 2f64
+        * PI64,
+    );
     JulianDay::from_julian_day(t * 36525f64 + J2000 + 8.0 / 24f64 - ShouXingUtil::dtt(t * 36525f64))
   }
 }
 
 impl Display for Phenology {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+  fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
     write!(f, "{}", self.get_name())
   }
 }
@@ -81,9 +105,9 @@ impl PartialEq for Phenology {
 
 impl Eq for Phenology {}
 
-impl Into<LoopTyme> for Phenology {
-  fn into(self) -> LoopTyme {
-    self.parent
+impl From<Phenology> for LoopTyme {
+  fn from(val: Phenology) -> Self {
+    val.parent
   }
 }
 
@@ -110,13 +134,27 @@ impl Culture for ThreePhenology {
 impl ThreePhenology {
   pub fn from_index(index: isize) -> Self {
     Self {
-      parent: LoopTyme::from_index(THREE_PHENOLOGY_NAMES.to_vec().iter().map(|x| x.to_string()).collect(), index)
+      parent: LoopTyme::from_index(
+        THREE_PHENOLOGY_NAMES
+          .to_vec()
+          .iter()
+          .map(|x| x.to_string())
+          .collect(),
+        index,
+      ),
     }
   }
 
   pub fn from_name(name: &str) -> Self {
     Self {
-      parent: LoopTyme::from_name(THREE_PHENOLOGY_NAMES.to_vec().iter().map(|x| x.to_string()).collect(), name)
+      parent: LoopTyme::from_name(
+        THREE_PHENOLOGY_NAMES
+          .to_vec()
+          .iter()
+          .map(|x| x.to_string())
+          .collect(),
+        name,
+      ),
     }
   }
 
@@ -130,7 +168,7 @@ impl ThreePhenology {
 }
 
 impl Display for ThreePhenology {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+  fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
     write!(f, "{}", self.get_name())
   }
 }
@@ -143,9 +181,9 @@ impl PartialEq for ThreePhenology {
 
 impl Eq for ThreePhenology {}
 
-impl Into<LoopTyme> for ThreePhenology {
-  fn into(self) -> LoopTyme {
-    self.parent
+impl From<ThreePhenology> for LoopTyme {
+  fn from(val: ThreePhenology) -> Self {
+    val.parent
   }
 }
 
@@ -183,8 +221,13 @@ impl PhenologyDay {
 }
 
 impl Display for PhenologyDay {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{}第{}天", self.get_name(), self.parent.get_day_index() + 1)
+  fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+    write!(
+      f,
+      "{}第{}天",
+      self.get_name(),
+      self.parent.get_day_index() + 1
+    )
   }
 }
 
@@ -196,18 +239,20 @@ impl PartialEq for PhenologyDay {
 
 impl Eq for PhenologyDay {}
 
-impl Into<AbstractCultureDay> for PhenologyDay {
-  fn into(self) -> AbstractCultureDay {
-    self.parent
+impl From<PhenologyDay> for AbstractCultureDay {
+  fn from(val: PhenologyDay) -> Self {
+    val.parent
   }
 }
 
 #[cfg(test)]
 mod tests {
-  use crate::tyme::Culture;
+  use alloc::string::ToString;
+
   use crate::tyme::culture::phenology::{Phenology, PhenologyDay, ThreePhenology};
   use crate::tyme::jd::JulianDay;
   use crate::tyme::solar::{SolarDay, SolarTime};
+  use crate::tyme::Culture;
 
   #[test]
   fn test0() {
@@ -257,7 +302,17 @@ mod tests {
 
   #[test]
   fn test4() {
-    assert_eq!("蚯蚓结", SolarTime::from_ymd_hms(2025, 12, 26, 20, 49, 38).get_phenology().get_name());
-    assert_eq!("麋角解", SolarTime::from_ymd_hms(2025, 12, 26, 20, 49, 56).get_phenology().get_name());
+    assert_eq!(
+      "蚯蚓结",
+      SolarTime::from_ymd_hms(2025, 12, 26, 20, 49, 38)
+        .get_phenology()
+        .get_name()
+    );
+    assert_eq!(
+      "麋角解",
+      SolarTime::from_ymd_hms(2025, 12, 26, 20, 49, 56)
+        .get_phenology()
+        .get_name()
+    );
   }
 }

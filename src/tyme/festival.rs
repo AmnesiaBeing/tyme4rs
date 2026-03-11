@@ -1,15 +1,16 @@
-use std::fmt::{Display, Formatter};
-use std::str::FromStr;
+use core::fmt::{Display, Formatter};
 
-use regex::Regex;
+use alloc::string::{String, ToString};
 
-use crate::tyme::{AbstractCulture, Culture, Tyme};
 use crate::tyme::enums::FestivalType;
-use crate::tyme::lunar::{LunarDay};
+use crate::tyme::lunar::LunarDay;
 use crate::tyme::solar::{SolarDay, SolarTerm};
+use crate::tyme::{AbstractCulture, Culture, Tyme};
 
+include!(concat!(env!("OUT_DIR"), "/util_data.rs"));
+
+#[rustfmt::skip]
 pub static SOLAR_FESTIVAL_NAMES: [&str; 10] = ["元旦", "三八妇女节", "植树节", "五一劳动节", "五四青年节", "六一儿童节", "建党节", "八一建军节", "教师节", "国庆节"];
-pub static SOLAR_FESTIVAL_DATA: &str = "@00001011950@01003081950@02003121979@03005011950@04005041950@05006011950@06007011941@07008011933@08009101985@09010011950";
 
 /// 公历现代节日
 #[derive(Debug, Copy, Clone)]
@@ -32,66 +33,38 @@ impl Culture for SolarFestival {
 
 impl SolarFestival {
   pub fn from_ymd(year: isize, month: usize, day: usize) -> Option<Self> {
-    let reg: Regex = Regex::new(format!("{}{:0>two$}{:0>two$}{}", r"@\d{2}0", month, day, r"\d+", two = 2).as_str()).unwrap();
-    if reg.is_match(SOLAR_FESTIVAL_DATA) {
-      let data: &str = reg.find(SOLAR_FESTIVAL_DATA).unwrap().as_str();
-      let dy: &str = &data[8..data.len()];
-      let start_year: isize = isize::from_str(dy).unwrap();
-      if year < start_year {
-        return None;
+    for (index, f_month, f_day, start_year) in SOLAR_FESTIVAL_ENTRIES {
+      if f_month == month && f_day == day && year >= start_year {
+        return Some(Self {
+          festival_type: FestivalType::DAY,
+          day: SolarDay::from_ymd(year, month, day),
+          index,
+          start_year,
+        });
       }
-      let day: SolarDay = SolarDay::from_ymd(year, month, day);
-      let di: &str = &data[1..3];
-      let index: usize = usize::from_str(di).unwrap();
-      Some(Self {
-        festival_type: FestivalType::DAY,
-        day,
-        index,
-        start_year,
-      })
-    } else {
-      None
     }
+    None
   }
 
   pub fn from_index(year: isize, index: usize) -> Option<Self> {
     if index >= SOLAR_FESTIVAL_NAMES.len() {
       return None;
     }
-    let reg: Regex = Regex::new(format!("{}{:0>two$}{}", r"@", index, r"\d+", two = 2).as_str()).unwrap();
-    if reg.is_match(SOLAR_FESTIVAL_DATA) {
-      let data: &str = reg.find(SOLAR_FESTIVAL_DATA).unwrap().as_str();
-      let dt: usize = (data.chars().nth(3).unwrap() as usize) - ('0' as usize);
-      let festival_type: FestivalType = FestivalType::from_code(dt).unwrap();
-      if festival_type != FestivalType::DAY {
-        return None;
+    for (f_index, month, day, start_year) in SOLAR_FESTIVAL_ENTRIES {
+      if f_index == index && year >= start_year {
+        return Some(Self {
+          festival_type: FestivalType::DAY,
+          day: SolarDay::from_ymd(year, month, day),
+          index,
+          start_year,
+        });
       }
-      let dy: &str = &data[8..data.len()];
-      let start_year: isize = isize::from_str(dy).unwrap();
-      if year < start_year {
-        return None;
-      }
-      let dm: &str = &data[4..6];
-      let dd: &str = &data[6..8];
-      let month: usize = usize::from_str(dm).unwrap();
-      let day: usize = usize::from_str(dd).unwrap();
-
-      let day: SolarDay = SolarDay::from_ymd(year, month, day);
-      let di: &str = &data[1..3];
-      let index: usize = usize::from_str(di).unwrap();
-      Some(Self {
-        festival_type: FestivalType::DAY,
-        day,
-        index,
-        start_year,
-      })
-    } else {
-      None
     }
+    None
   }
 
   pub fn get_type(&self) -> FestivalType {
-    self.festival_type.clone()
+    self.festival_type
   }
 
   pub fn get_index(&self) -> usize {
@@ -109,12 +82,15 @@ impl SolarFestival {
   pub fn next(&self, n: isize) -> Option<Self> {
     let size: isize = SOLAR_FESTIVAL_NAMES.len() as isize;
     let i: isize = self.get_index() as isize + n;
-    Self::from_index((self.day.get_year() * size + i) / size, AbstractCulture::new().index_of(i, size as usize))
+    Self::from_index(
+      (self.day.get_year() * size + i) / size,
+      AbstractCulture::new().index_of(i, size as usize),
+    )
   }
 }
 
 impl Display for SolarFestival {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+  fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
     write!(f, "{} {}", self.get_day(), self.get_name())
   }
 }
@@ -127,8 +103,8 @@ impl PartialEq for SolarFestival {
 
 impl Eq for SolarFestival {}
 
+#[rustfmt::skip]
 pub static LUNAR_FESTIVAL_NAMES: [&str; 13] = ["春节", "元宵节", "龙头节", "上巳节", "清明节", "端午节", "七夕节", "中元节", "中秋节", "重阳节", "冬至节", "腊八节", "除夕"];
-pub static LUNAR_FESTIVAL_DATA: &str = "@0000101@0100115@0200202@0300303@04107@0500505@0600707@0700715@0800815@0900909@10124@1101208@122";
 
 /// 农历传统节日（依据国家标准《农历的编算和颁行》GB/T 33661-2017）
 #[derive(Debug, Clone)]
@@ -151,29 +127,26 @@ impl Culture for LunarFestival {
 
 impl LunarFestival {
   pub fn from_ymd(year: isize, month: isize, day: usize) -> Option<Self> {
-    let mut reg: Regex = Regex::new(format!("{}{:0>two$}{:0>two$}", r"@\d{2}0", month, day, two = 2).as_str()).unwrap();
-    if reg.is_match(LUNAR_FESTIVAL_DATA) {
-      let data: &str = reg.find(LUNAR_FESTIVAL_DATA).unwrap().as_str();
-      let day: LunarDay = LunarDay::from_ymd(year, month, day);
-      let di: &str = &data[1..3];
-      let index: usize = usize::from_str(di).unwrap();
-      return Some(Self {
-        festival_type: FestivalType::DAY,
-        day,
-        index,
-        solar_term: None,
-      });
+    // DAY 类型
+    for (index, f_month, f_day) in LUNAR_FESTIVAL_DAY_ENTRIES {
+      if f_month as isize == month && f_day == day {
+        return Some(Self {
+          festival_type: FestivalType::DAY,
+          day: LunarDay::from_ymd(year, month, day),
+          index,
+          solar_term: None,
+        });
+      }
     }
-    reg = Regex::new(r"@\d{2}1\d{2}").unwrap();
-    if reg.is_match(LUNAR_FESTIVAL_DATA) {
-      let data: &str = reg.find(LUNAR_FESTIVAL_DATA).unwrap().as_str();
-      let di: &str = &data[4..data.len()];
-      let term_index: usize = usize::from_str(di).unwrap();
+
+    // TERM 类型
+    for (index, term_index) in LUNAR_FESTIVAL_TERM_ENTRIES {
       let solar_term: SolarTerm = SolarTerm::from_index(year, term_index as isize);
-      let di: &str = &data[1..3];
-      let index: usize = usize::from_str(di).unwrap();
       let lunar_day: LunarDay = solar_term.get_solar_day().get_lunar_day();
-      if lunar_day.get_year() == year && lunar_day.get_month() == month && lunar_day.get_day() == day {
+      if lunar_day.get_year() == year
+        && lunar_day.get_month() == month
+        && lunar_day.get_day() == day
+      {
         return Some(Self {
           festival_type: FestivalType::TERM,
           day: lunar_day,
@@ -182,12 +155,9 @@ impl LunarFestival {
         });
       }
     }
-    reg = Regex::new(r"@\d{2}2").unwrap();
-    if reg.is_match(LUNAR_FESTIVAL_DATA) {
-      let data: &str = reg.find(LUNAR_FESTIVAL_DATA).unwrap().as_str();
-      let di: &str = &data[1..3];
-      let index: usize = usize::from_str(di).unwrap();
 
+    // EVE 类型
+    for index in LUNAR_FESTIVAL_EVE_INDICES {
       let lunar_day: LunarDay = LunarDay::from_ymd(year, month, day);
       let next_day: LunarDay = lunar_day.next(1);
       if next_day.get_month() == 1 && next_day.get_day() == 1 {
@@ -199,6 +169,7 @@ impl LunarFestival {
         });
       }
     }
+
     None
   }
 
@@ -206,57 +177,50 @@ impl LunarFestival {
     if index >= LUNAR_FESTIVAL_NAMES.len() {
       return None;
     }
-    let reg: Regex = Regex::new(format!("{}{:0>two$}{}", r"@", index, r"\d+", two = 2).as_str()).unwrap();
-    if reg.is_match(LUNAR_FESTIVAL_DATA) {
-      let data: &str = reg.find(LUNAR_FESTIVAL_DATA).unwrap().as_str();
-      let dt: usize = (data.chars().nth(3).unwrap() as usize) - ('0' as usize);
-      let festival_type: FestivalType = FestivalType::from_code(dt).unwrap();
-      return match festival_type {
-        FestivalType::DAY => {
-          let dm: &str = &data[4..6];
-          let dd: &str = &data[6..8];
-          let month: usize = usize::from_str(dm).unwrap();
-          let day: usize = usize::from_str(dd).unwrap();
-          let di: &str = &data[1..3];
-          let index: usize = usize::from_str(di).unwrap();
-          Some(Self {
-            festival_type: FestivalType::DAY,
-            day: LunarDay::from_ymd(year, month as isize, day),
-            index,
-            solar_term: None,
-          })
-        }
-        FestivalType::TERM => {
-          let ti: &str = &data[4..data.len()];
-          let term_index: usize = usize::from_str(ti).unwrap();
-          let solar_term: SolarTerm = SolarTerm::from_index(year, term_index as isize);
-          let di: &str = &data[1..3];
-          let index: usize = usize::from_str(di).unwrap();
-          let lunar_day: LunarDay = solar_term.get_solar_day().get_lunar_day();
-          Some(Self {
-            festival_type: FestivalType::TERM,
-            day: lunar_day,
-            index,
-            solar_term: Some(solar_term),
-          })
-        }
-        FestivalType::EVE => {
-          let di: &str = &data[1..3];
-          let index: usize = usize::from_str(di).unwrap();
-          Some(Self {
-            festival_type: FestivalType::EVE,
-            day: LunarDay::from_ymd(year + 1, 1, 1).next(-1),
-            index,
-            solar_term: None,
-          })
-        }
-      };
+
+    // DAY 类型
+    for (f_index, month, day) in LUNAR_FESTIVAL_DAY_ENTRIES {
+      if f_index == index {
+        return Some(Self {
+          festival_type: FestivalType::DAY,
+          day: LunarDay::from_ymd(year, month as isize, day),
+          index,
+          solar_term: None,
+        });
+      }
     }
+
+    // TERM 类型
+    for (f_index, term_index) in LUNAR_FESTIVAL_TERM_ENTRIES {
+      if f_index == index {
+        let solar_term: SolarTerm = SolarTerm::from_index(year, term_index as isize);
+        let lunar_day: LunarDay = solar_term.get_solar_day().get_lunar_day();
+        return Some(Self {
+          festival_type: FestivalType::TERM,
+          day: lunar_day,
+          index,
+          solar_term: Some(solar_term),
+        });
+      }
+    }
+
+    // EVE 类型
+    for f_index in LUNAR_FESTIVAL_EVE_INDICES {
+      if f_index == index {
+        return Some(Self {
+          festival_type: FestivalType::EVE,
+          day: LunarDay::from_ymd(year + 1, 1, 1).next(-1),
+          index,
+          solar_term: None,
+        });
+      }
+    }
+
     None
   }
 
   pub fn get_type(&self) -> FestivalType {
-    self.festival_type.clone()
+    self.festival_type
   }
 
   pub fn get_index(&self) -> usize {
@@ -274,12 +238,15 @@ impl LunarFestival {
   pub fn next(&self, n: isize) -> Option<Self> {
     let size: isize = LUNAR_FESTIVAL_NAMES.len() as isize;
     let i: isize = self.get_index() as isize + n;
-    Self::from_index((self.get_day().get_year() * size + i) / size, AbstractCulture::new().index_of(i, size as usize))
+    Self::from_index(
+      (self.get_day().get_year() * size + i) / size,
+      AbstractCulture::new().index_of(i, size as usize),
+    )
   }
 }
 
 impl Display for LunarFestival {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+  fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
     write!(f, "{} {}", self.get_day(), self.get_name())
   }
 }
@@ -294,6 +261,8 @@ impl Eq for LunarFestival {}
 
 #[cfg(test)]
 mod tests {
+  use alloc::string::ToString;
+
   use crate::tyme::festival::{LunarFestival, SolarFestival};
   use crate::tyme::lunar::LunarDay;
   use crate::tyme::solar::SolarDay;
@@ -302,7 +271,10 @@ mod tests {
   fn test1() {
     let f: LunarFestival = LunarFestival::from_index(2023, 0).unwrap();
     assert_eq!("农历甲辰年正月初一 春节", f.next(13).unwrap().to_string());
-    assert_eq!("农历壬寅年十一月廿九 冬至节", f.next(-3).unwrap().to_string());
+    assert_eq!(
+      "农历壬寅年十一月廿九 冬至节",
+      f.next(-3).unwrap().to_string()
+    );
   }
 
   #[test]
@@ -327,15 +299,24 @@ mod tests {
   fn test5() {
     let f: Option<SolarFestival> = SolarFestival::from_index(2023, 0);
     assert_eq!(false, f.is_none());
-    assert_eq!("2024年5月1日 五一劳动节", f.unwrap().next(13).unwrap().to_string());
-    assert_eq!("2022年8月1日 八一建军节", f.unwrap().next(-3).unwrap().to_string());
+    assert_eq!(
+      "2024年5月1日 五一劳动节",
+      f.unwrap().next(13).unwrap().to_string()
+    );
+    assert_eq!(
+      "2022年8月1日 八一建军节",
+      f.unwrap().next(-3).unwrap().to_string()
+    );
   }
 
   #[test]
   fn test6() {
     let f: Option<SolarFestival> = SolarFestival::from_index(2023, 0);
     assert_eq!(false, f.is_none());
-    assert_eq!("2022年3月8日 三八妇女节", f.unwrap().next(-9).unwrap().to_string());
+    assert_eq!(
+      "2022年3月8日 三八妇女节",
+      f.unwrap().next(-9).unwrap().to_string()
+    );
   }
 
   #[test]

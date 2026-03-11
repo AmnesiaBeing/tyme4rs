@@ -1,4 +1,6 @@
-use std::fmt::{Display, Formatter};
+use core::fmt::{Display, Formatter};
+
+use alloc::string::{String, ToString};
 
 use crate::tyme::{Culture, LoopTyme, Tyme};
 
@@ -25,13 +27,27 @@ impl Culture for SixStar {
 impl SixStar {
   pub fn from_index(index: isize) -> Self {
     Self {
-      parent: LoopTyme::from_index(SIX_STAR_NAMES.to_vec().iter().map(|x| x.to_string()).collect(), index)
+      parent: LoopTyme::from_index(
+        SIX_STAR_NAMES
+          .to_vec()
+          .iter()
+          .map(|x| x.to_string())
+          .collect(),
+        index,
+      ),
     }
   }
 
   pub fn from_name(name: &str) -> Self {
     Self {
-      parent: LoopTyme::from_name(SIX_STAR_NAMES.to_vec().iter().map(|x| x.to_string()).collect(), name)
+      parent: LoopTyme::from_name(
+        SIX_STAR_NAMES
+          .to_vec()
+          .iter()
+          .map(|x| x.to_string())
+          .collect(),
+        name,
+      ),
     }
   }
 
@@ -45,7 +61,7 @@ impl SixStar {
 }
 
 impl Display for SixStar {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+  fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
     write!(f, "{}", self.get_name())
   }
 }
@@ -58,21 +74,23 @@ impl PartialEq for SixStar {
 
 impl Eq for SixStar {}
 
-impl Into<LoopTyme> for SixStar {
-  fn into(self) -> LoopTyme {
-    self.parent
+impl From<SixStar> for LoopTyme {
+  fn from(val: SixStar) -> Self {
+    val.parent
   }
 }
 
 #[cfg(test)]
 mod tests {
-  use crate::tyme::Culture;
   use crate::tyme::culture::star::six::SixStar;
   use crate::tyme::solar::SolarDay;
+  use crate::tyme::Culture;
 
   #[test]
   fn test1() {
-    let star: SixStar = SolarDay::from_ymd(2020, 4, 23).get_lunar_day().get_six_star();
+    let star: SixStar = SolarDay::from_ymd(2020, 4, 23)
+      .get_lunar_day()
+      .get_six_star();
     assert_eq!("佛灭", star.get_name());
   }
 }
