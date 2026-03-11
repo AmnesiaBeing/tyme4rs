@@ -161,8 +161,8 @@ impl Culture for LoopTyme {
 impl LoopTyme {
   pub fn new(names: Vec<String>, name: &str) -> Result<Self, String> {
     let mut real_index: Option<usize> = None;
-    for i in 0..names.len() {
-      if names[i] == name {
+    for (i, n) in names.iter().enumerate() {
+      if n == name {
         real_index = Some(i);
         break;
       }

@@ -13,3 +13,7 @@ keywords = ["Solar", "Lunar", "SixtyCycle", "SolarTerm"]
 [dependencies]
 libm = "0.2"
 atomic_refcell = "0.1.13"
+
+[lints.clippy]
+excessive_precision = "allow"
+approx_constant = "allow"

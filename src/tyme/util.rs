@@ -376,7 +376,7 @@ impl ShouXingUtil {
     if n < 0 {
       n = obl;
     }
-    for i in 0..4 {
+    for (i, _) in (0..4).enumerate() {
       let (start, len) = XL1_INDEX[i];
       let l = len;
       let mut m: usize = (((n * (l as isize) / obl) as f64) + 0.5) as usize;

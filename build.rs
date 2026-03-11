@@ -86,8 +86,8 @@ fn generate_rab_byung_month_days_data() -> String {
       let chars: Vec<char> = ys.chars().collect();
       let len = (chars[0] as u8 - b'0') as usize;
       let mut data: Vec<isize> = Vec::new();
-      for i in 1..=len {
-        data.push(chars[i] as isize - b'5' as isize - 30);
+      for ch in chars.iter().take(len).skip(1) {
+        data.push(*ch as isize - b'5' as isize - 30);
       }
       entries.push((y * 13 + m, data));
       m += 1;

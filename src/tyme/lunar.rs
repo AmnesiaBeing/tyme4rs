@@ -107,8 +107,8 @@ impl LunarYear {
     if self.year == -1 {
       return 11;
     }
-    for i in 0..LEAP_MONTH_YEAR.len() {
-      if LEAP_MONTH_YEAR[i].contains(&self.year) {
+    for (i, months) in LEAP_MONTH_YEAR.iter().enumerate() {
+      if months.contains(&self.year) {
         return i + 1;
       }
     }

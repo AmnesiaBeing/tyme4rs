@@ -51,7 +51,7 @@ impl LegalHoliday {
 
   pub fn next(&self, n: isize) -> Option<Self> {
     if n == 0 {
-      return Some(self.clone());
+      return Some(*self);
     }
 
     // 获取当前日期的年、月、日
